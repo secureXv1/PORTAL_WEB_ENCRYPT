@@ -1,34 +1,46 @@
 <template>
-  <div class="dashboard">
-    <!-- Top bar -->
+  <div class="dashboard-wrapper">
     <div class="topbar">
-      <h2>Portal Encrypt</h2>
-      <button @click="logout">Cerrar sesión</button>
+      <div class="branding">
+        <h1>Encrypt</h1>
+        <p>Hola <strong>@user</strong></p>
+      </div>
+      <button class="logout" @click="logout">Cerrar sesión</button>
     </div>
 
-    <!-- Layout -->
     <div class="layout">
-      <!-- Sidebar -->
-      <div class="sidebar">
+      <aside class="sidebar">
         <ul>
-          <li @click="navigate('inicio')" :class="{ active: isActive('inicio') }">Inicio</li>
-          <li @click="navigate('tuneles')" :class="{ active: isActive('tuneles') }">Túneles</li>
-          <li @click="navigate('usuarios')" :class="{ active: isActive('usuarios') }">Usuarios</li>
-          <li @click="navigate('multimedia')" :class="{ active: isActive('multimedia') }">Multimedia</li>
-          <li @click="navigate('licencias')" :class="{ active: isActive('licencias') }">Licencias</li>
+          <li v-for="item in menu" :key="item.label" :class="{ active: isActive(item.view) }" @click="navigate(item.view)">
+            <span class="icon">{{ item.icon }}</span>
+            <span>{{ item.label }}</span>
+          </li>
         </ul>
-      </div>
+      </aside>
 
-      <!-- Main content -->
-      <div class="content">
+      <main class="main-content">
         <router-view />
-      </div>
+      </main>
     </div>
   </div>
 </template>
 
 <script>
 export default {
+  data() {
+    return {
+      menu: [
+        { view: 'inicio', label: 'Inicio', icon: '🏠' },
+        { view: 'tuneles', label: 'Túneles', icon: '🛰️' },
+        { view: 'multimedia', label: 'Archivos', icon: '🗂️' },
+        { view: 'clientes', label: 'Clientes', icon: '👥' },
+        { view: 'banco_pss', label: 'Banco pss', icon: '🔐' },
+        { view: 'licencias', label: 'Licencias', icon: '📄' },
+        { view: 'usuarios', label: 'Usuarios', icon: '👤' },
+        { view: 'configuracion', label: 'Configuración', icon: '⚙️' }
+      ]
+    }
+  },
   methods: {
     logout() {
       localStorage.removeItem('loggedIn')
@@ -45,74 +57,84 @@ export default {
 </script>
 
 <style scoped>
-.dashboard {
-  height: 100vh;
+.dashboard-wrapper {
   display: flex;
   flex-direction: column;
-  font-family: sans-serif;
-  background-color: #1e1e1e;
-  color: white;
+  height: 100vh;
+  background-color: #0e0e0e;
+  color: #fff;
+  font-family: 'Segoe UI', sans-serif;
 }
 
 .topbar {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  background: #2c3e50;
+  background: #1f2c3a;
+  padding: 10px 20px;
   color: white;
-  padding: 15px 20px;
-  height: 60px;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.5);
+  box-shadow: 0 2px 5px rgba(0,0,0,0.2);
 }
 
-.topbar button {
-  background: #111;
+.branding h1 {
+  margin: 0;
+  font-size: 20px;
+}
+
+.branding p {
+  margin: 0;
+  font-size: 12px;
+  opacity: 0.7;
+}
+
+.logout {
+  background: #000;
+  color: #fff;
   border: none;
-  color: white;
-  padding: 8px 14px;
+  padding: 8px 12px;
   border-radius: 4px;
   cursor: pointer;
-}
-
-.topbar button:hover {
-  background: #444;
 }
 
 .layout {
   display: flex;
   flex: 1;
-  min-height: 0;
+  overflow: hidden;
 }
 
 .sidebar {
   width: 200px;
-  background: #2c3e50;
+  background-color: #1f2c3a;
   display: flex;
   flex-direction: column;
+  padding-top: 20px;
 }
 
 .sidebar ul {
   list-style: none;
-  padding: 0;
   margin: 0;
+  padding: 0;
 }
 
 .sidebar li {
-  padding: 15px;
+  padding: 12px 20px;
   cursor: pointer;
-  border-bottom: 1px solid rgba(255,255,255,0.1);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border-left: 4px solid transparent;
 }
 
 .sidebar li.active,
 .sidebar li:hover {
-  background: #1abc9c;
+  background-color: #2980b9;
+  border-left: 4px solid #1abc9c;
 }
 
-.content {
+.main-content {
   flex: 1;
   padding: 30px;
+  background: #131313;
   overflow-y: auto;
 }
 </style>
-
-

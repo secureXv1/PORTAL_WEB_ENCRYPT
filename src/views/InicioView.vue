@@ -1,20 +1,39 @@
 <template>
   <div class="inicio-container">
-    <h2 class="titulo">Estadísticas Generales</h2>
+    <h2 class="titulo">Dashboard</h2>
+
+    <div class="overview-cards">
+      <div class="card"><h4>Cantidad archivos</h4><p>{{ archivos.length }}</p><small>Último mes</small></div>
+      <div class="card"><h4>Cantidad usuarios</h4><p>{{ usuarios.length }}</p></div>
+      <div class="card"><h4>Licencias por vencer próximamente</h4><p>1</p><small>xxxxx 15jun26</small></div>
+    </div>
 
     <div class="grid">
-      <!-- Bloque de usuarios -->
+      <!-- Gráfico de archivos -->
+      <div class="card wide">
+        <h3>📊 Cantidad de archivos</h3>
+        <Bar :data="chartData" :options="chartOptions" />
+      </div>
+
+      <!-- Usuarios online -->
       <div class="card">
-        <h3>👤 Usuarios</h3>
-        <ul>
-          <li v-for="u in usuarios" :key="u.uuid">{{ u.hostname }} - {{ u.sistema }}</li>
+        <h3>👥 Usuarios online</h3>
+        <ul class="usuarios">
+          <li v-for="u in usuarios" :key="u.uuid">
+            <strong>{{ u.hostname }}</strong><br />
+            <small>{{ u.sistema }}</small>
+          </li>
         </ul>
       </div>
 
-      <!-- Bloque de gráfica -->
+      <!-- Túneles online -->
       <div class="card">
-        <h3>📊 Archivos por día</h3>
-        <Bar :data="chartData" :options="chartOptions" />
+        <h3>🛰️ Túneles online</h3>
+        <ul class="usuarios">
+          <li>Túnel: 1006 <br /><small>Hace 5 minutos</small></li>
+          <li>Túnel: Gatico <br /><small>Hace 1 minuto</small></li>
+          <li>Túnel: Gorro <br /><small>Hace 7 minutos</small></li>
+        </ul>
       </div>
     </div>
   </div>
@@ -36,6 +55,7 @@ export default {
   data() {
     return {
       usuarios: [],
+      archivos: [],
       chartData: {
         labels: [],
         datasets: [{
@@ -57,6 +77,9 @@ export default {
     axios.get('http://symbolsaps.ddns.net:8000/api/usuarios')
       .then(res => this.usuarios = res.data)
 
+    axios.get('http://symbolsaps.ddns.net:8000/api/files')
+      .then(res => this.archivos = res.data)
+
     axios.get('http://symbolsaps.ddns.net:8000/api/estadisticas/archivos-por-dia')
       .then(res => {
         this.chartData.labels = res.data.map(r => r.fecha)
@@ -75,18 +98,34 @@ export default {
 }
 .titulo {
   font-size: 28px;
-  margin-bottom: 20px;
+  margin-bottom: 30px;
 }
-.grid {
+.overview-cards {
   display: flex;
-  gap: 30px;
-  flex-wrap: wrap;
+  gap: 20px;
+  margin-bottom: 30px;
 }
 .card {
   background: #2c3e50;
   padding: 20px;
   border-radius: 10px;
   flex: 1;
-  min-width: 300px;
+  min-width: 250px;
+}
+.card p {
+  font-size: 32px;
+  margin: 10px 0;
+}
+.grid {
+  display: flex;
+  gap: 30px;
+  flex-wrap: wrap;
+}
+.card.wide {
+  flex: 2;
+}
+.usuarios li {
+  margin-bottom: 10px;
+  line-height: 1.3;
 }
 </style>
