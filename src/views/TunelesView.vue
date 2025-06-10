@@ -31,15 +31,29 @@
       </div>
     </main>
 
-    <!-- Archivos -->
+    <!-- Participantes y Archivos -->
     <aside class="archivos">
-      <h4>📁 Archivos</h4>
-      <ul>
-        <li v-for="file in archivos" :key="file.id">
-          {{ file.filename }}
-        </li>
-      </ul>
-    </aside>
+  <div class="participantes">
+  <h4>👥 Participantes</h4>
+  <ul>
+    <li v-for="p in participantes" :key="p.client_uuid">
+      <strong>{{ p.alias }}</strong><br />
+      <small>{{ p.hostname }}</small><br />
+      <code>{{ p.client_uuid }}</code>
+    </li>
+  </ul>
+</div>
+
+  <div>
+    <h4>📁 Archivos</h4>
+    <ul>
+      <li v-for="file in archivos" :key="file.id">
+        {{ file.filename }}
+      </li>
+    </ul>
+  </div>
+</aside>
+
   </div>
 </template>
 
@@ -48,14 +62,16 @@ import axios from 'axios'
 
 export default {
   data() {
-    return {
-      busqueda: '',
-      tuneles: [],
-      tunelActivo: null,
-      mensajes: [],
-      archivos: []
-    }
-  },
+  return {
+    tuneles: [],
+    tunelActivo: null,
+    mensajes: [],
+    archivos: [],
+    participantes: [],
+    busqueda: ''
+  }
+}
+,
   computed: {
     tunelesFiltrados() {
       return this.tuneles.filter(t => t.name.toLowerCase().includes(this.busqueda.toLowerCase()))
@@ -75,15 +91,26 @@ export default {
         })
     },
     seleccionarTunel(tunel) {
-      this.tunelActivo = tunel
-      axios.get(`http://symbolsaps.ddns.net:8000/api/messages?tunnel_id=${tunel.id}`)
-        .then(res => this.mensajes = res.data.reverse())
+  this.tunelActivo = tunel
 
-      axios.get('http://symbolsaps.ddns.net:8000/api/files')
-        .then(res => {
-          this.archivos = res.data.filter(f => f.tunnel_id == tunel.id)
-        })
-    },
+  axios.get(`http://symbolsaps.ddns.net:8000/api/messages?tunnel_id=${tunel.id}`)
+    .then(res => this.mensajes = res.data.reverse())
+
+  axios.get('http://symbolsaps.ddns.net:8000/api/files')
+    .then(res => {
+      this.archivos = res.data.filter(f => f.tunnel_id == tunel.id)
+    })
+
+  axios.get(`http://symbolsaps.ddns.net:8000/api/tunnels/${tunel.id}/participantes`)
+    .then(res => {
+      this.participantes = res.data
+    })
+    .catch(err => {
+      console.error('❌ Error cargando participantes:', err)
+      this.participantes = []
+    })
+}
+,
     formatearFecha(fecha) {
       return new Date(fecha).toLocaleString()
     }
@@ -188,6 +215,19 @@ export default {
 }
 
 .archivos li {
+  background: #3b5164;
+  padding: 8px;
+  margin-bottom: 6px;
+  border-radius: 4px;
+}
+
+.participantes ul {
+  list-style: none;
+  padding: 0;
+  margin-bottom: 20px;
+}
+
+.participantes li {
   background: #3b5164;
   padding: 8px;
   margin-bottom: 6px;
