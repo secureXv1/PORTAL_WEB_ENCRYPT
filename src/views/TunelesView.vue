@@ -25,10 +25,21 @@
       </div>
 
       <div class="mensajes">
-        <div v-for="msg in mensajes" :key="msg.id" :class="['burbuja', msg.alias === 'yo' ? 'propio' : 'externo']">
-          <p>{{ msg.contenido }}</p>
-        </div>
-      </div>
+  <div
+    v-for="msg in mensajes"
+    :key="msg.id"
+    class="mensaje-wrapper externo"
+  >
+    <div class="alias">
+  {{ msg.alias }} • {{ formatearFecha(msg.enviado_en) }}
+    </div>
+
+    <div :class="['burbuja', 'externo', getColorClass(msg.alias)]">
+      {{ msg.contenido }}
+    </div>
+  </div>
+</div>
+
     </main>
 
     <!-- Participantes y Archivos -->
@@ -85,41 +96,46 @@ export default {
   mounted() {
     this.cargarTuneles()
   },
-  methods: {
-    cargarTuneles() {
-      axios.get('http://symbolsaps.ddns.net:8000/api/tunnels')
-        .then(res => {
-          this.tuneles = res.data
-          if (res.data.length) {
-            this.seleccionarTunel(res.data[0])
-          }
-        })
-    },
-    seleccionarTunel(tunel) {
-  this.tunelActivo = tunel
+ methods: {
+  cargarTuneles() {
+    axios.get('http://symbolsaps.ddns.net:8000/api/tunnels')
+      .then(res => {
+        this.tuneles = res.data
+        if (res.data.length) {
+          this.seleccionarTunel(res.data[0])
+        }
+      })
+  },
+  seleccionarTunel(tunel) {
+    this.tunelActivo = tunel
 
-  axios.get(`http://symbolsaps.ddns.net:8000/api/messages?tunnel_id=${tunel.id}`)
-    .then(res => this.mensajes = res.data.reverse())
+    axios.get(`http://symbolsaps.ddns.net:8000/api/messages?tunnel_id=${tunel.id}`)
+      .then(res => this.mensajes = res.data.reverse())
 
-  axios.get('http://symbolsaps.ddns.net:8000/api/files')
-    .then(res => {
-      this.archivos = res.data.filter(f => f.tunnel_id == tunel.id)
-    })
+    axios.get('http://symbolsaps.ddns.net:8000/api/files')
+      .then(res => {
+        this.archivos = res.data.filter(f => f.tunnel_id == tunel.id)
+      })
 
-  axios.get(`http://symbolsaps.ddns.net:8000/api/tunnels/${tunel.id}/participantes`)
-    .then(res => {
-      this.participantes = res.data
-    })
-    .catch(err => {
-      console.error('❌ Error cargando participantes:', err)
-      this.participantes = []
-    })
-}
-,
-    formatearFecha(fecha) {
-      return new Date(fecha).toLocaleString()
-    }
+    axios.get(`http://symbolsaps.ddns.net:8000/api/tunnels/${tunel.id}/participantes`)
+      .then(res => {
+        this.participantes = res.data
+      })
+      .catch(err => {
+        console.error('❌ Error cargando participantes:', err)
+        this.participantes = []
+      })
+  },
+  formatearFecha(fecha) {
+  return new Date(fecha).toLocaleString()
+  },
+  getColorClass(alias) {
+    const colores = ['color-1', 'color-2', 'color-3', 'color-4', 'color-5']
+    const hash = alias.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0)
+    return colores[hash % colores.length]
   }
+}
+
 }
 </script>
 
@@ -188,24 +204,40 @@ export default {
   flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 16px;
+  overflow-y: auto;
+  padding: 10px 15px;
+}
+
+.mensaje-wrapper {
+  display: flex;
+  flex-direction: column;
+  max-width: 80%;
+  align-self: flex-start;
+  text-align: left;
 }
 
 .burbuja {
-  max-width: 70%;
-  padding: 10px;
-  border-radius: 10px;
+  padding: 12px 16px;
+  border-radius: 16px;
+  color: #fff;
+  word-break: break-word;
+  line-height: 1.4;
+  font-size: 15px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
 }
 
-.propio {
-  align-self: flex-end;
-  background: #1abc9c;
+.alias {
+  font-size: 13px;
+  color: #bbb;
+  margin-bottom: 4px;
 }
 
-.externo {
-  align-self: flex-start;
-  background: #34495e;
-}
+.externo.color-1 { background-color: var(--color-1); }
+.externo.color-2 { background-color: var(--color-2); }
+.externo.color-3 { background-color: var(--color-3); }
+.externo.color-4 { background-color: var(--color-4); }
+.externo.color-5 { background-color: var(--color-5); }
 
 .archivos {
   width: 250px;
