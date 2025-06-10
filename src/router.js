@@ -4,6 +4,8 @@ import Dashboard from './views/Dashboard.vue'
 import InicioView from './views/InicioView.vue'
 import TunnelMessages from './views/TunnelMessages.vue'
 import TunelesView from './views/TunelesView.vue'
+import ArchivosView from './views/ArchivosView.vue'
+
 
 const routes = [
   { path: '/', redirect: '/login' },
@@ -16,6 +18,7 @@ const routes = [
       { path: 'inicio', component: InicioView },
       { path: 'tuneles', component: TunelesView }, 
       { path: 'tunnel/:id', component: TunnelMessages },
+      { path: 'multimedia', component: ArchivosView },
       // puedes agregar más aquí
     ]
   }
