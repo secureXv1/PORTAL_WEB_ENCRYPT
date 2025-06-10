@@ -33,26 +33,31 @@
 
     <!-- Participantes y Archivos -->
     <aside class="archivos">
-  <div class="participantes">
-  <h4>👥 Participantes</h4>
-  <ul>
-    <li v-for="p in participantes" :key="p.client_uuid">
-      <strong>{{ p.alias }}</strong><br />
-      <small>{{ p.hostname }}</small><br />
-      <code>{{ p.client_uuid }}</code>
-    </li>
-  </ul>
-</div>
+  <div class="panel-contenedor">
+    <!-- Participantes -->
+    <h4>&nbsp;&nbsp;👥 Participantes ({{ participantes.length }})</h4>
+    <div class="participantes">
+      <ul>
+        <li v-for="p in participantes" :key="p.client_uuid">
+          <strong>{{ p.alias }}</strong><br />
+          <small>{{ p.hostname }}</small><br />
+          <code>{{ p.client_uuid }}</code>
+        </li>
+      </ul>
+    </div>
 
-  <div>
-    <h4>📁 Archivos</h4>
-    <ul>
-      <li v-for="file in archivos" :key="file.id">
-        {{ file.filename }}
-      </li>
-    </ul>
+    <!-- Archivos -->
+    <h4>&nbsp;&nbsp;📁 Archivos ({{ archivos.length }})</h4>
+    <div class="archivos-lista">
+      <ul>
+        <li v-for="file in archivos" :key="file.id">
+          {{ file.filename }}
+        </li>
+      </ul>
+    </div>
   </div>
 </aside>
+
 
   </div>
 </template>
@@ -203,10 +208,12 @@ export default {
 }
 
 .archivos {
-  width: 220px;
+  width: 250px;
   background: #2c3e50;
-  padding: 20px;
-  overflow-y: auto;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 }
 
 .archivos ul {
@@ -221,16 +228,48 @@ export default {
   border-radius: 4px;
 }
 
-.participantes ul {
-  list-style: none;
-  padding: 0;
-  margin-bottom: 20px;
+.participantes {
+  max-height: 400px; /* altura aprox. para 4 elementos */
+  overflow-y: auto;
+  padding: 20px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid #444;
 }
 
-.participantes li {
+
+.participantes h4,
+.archivos-lista h4 {
+  margin: 0 0 10px;
+  padding-bottom: 5px;
+  border-bottom: 1px solid #444;
+}
+
+.participantes ul,
+.archivos-lista ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.participantes li,
+.archivos-lista li {
   background: #3b5164;
   padding: 8px;
   margin-bottom: 6px;
   border-radius: 4px;
 }
+
+.panel-contenedor {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.archivos-lista {
+  padding: 20px;
+  border-top: 1px solid #444;
+}
+
+
+
 </style>
