@@ -5,6 +5,8 @@ import InicioView from './views/InicioView.vue'
 import TunnelMessages from './views/TunnelMessages.vue'
 import TunelesView from './views/TunelesView.vue'
 import ArchivosView from './views/ArchivosView.vue'
+import ClientesView from './views/ClientesView.vue' 
+
 
 
 const routes = [
@@ -19,6 +21,7 @@ const routes = [
       { path: 'tuneles', component: TunelesView }, 
       { path: 'tunnel/:id', component: TunnelMessages },
       { path: 'multimedia', component: ArchivosView },
+      { path: 'clientes', component: ClientesView },
       // puedes agregar más aquí
     ]
   }
