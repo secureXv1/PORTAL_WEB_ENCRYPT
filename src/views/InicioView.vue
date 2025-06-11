@@ -4,7 +4,7 @@
 
     <div class="overview-cards">
       <div class="card"><h4>Cantidad archivos</h4><p>{{ archivos.length }}</p><small>Último mes</small></div>
-      <div class="card"><h4>Cantidad usuarios</h4><p>{{ usuarios.length }}</p></div>
+      <div class="card"><h4>Cantidad Clientes</h4><p>{{ usuarios.length }}</p></div>
       <div class="card"><h4>Licencias por vencer próximamente</h4><p>1</p><small>xxxxx 15jun26</small></div>
     </div>
 
@@ -17,7 +17,7 @@
 
       <!-- Usuarios online -->
       <div class="card">
-        <h3>👥 Usuarios online</h3>
+        <h3>👥 Clientes online</h3>
         <ul class="usuarios">
           <li v-for="u in usuarios" :key="u.uuid">
             <strong>{{ u.hostname }}</strong><br />

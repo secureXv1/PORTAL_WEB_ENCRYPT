@@ -19,12 +19,15 @@
 
     <!-- Conversación -->
     <main class="chat-area">
-      <div class="chat-header">
-  <h3>Tunel {{ tunelActivo?.name || '...' }}</h3>
-  <p v-if="tunelActivo">Creado el {{ formatearFecha(tunelActivo.created_at) }}</p>
 
-  <div style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap; margin-top: 10px;">
-    <!-- Descarga -->
+      <div class="chat-header">
+  <div class="header-left">
+    <h3>Tunel {{ tunelActivo?.name || '...' }}</h3>
+    <p v-if="tunelActivo">Creado el {{ formatearFecha(tunelActivo.created_at) }}</p>
+  </div>
+
+  <div class="header-right">
+    <!-- Botón de descarga -->
     <div class="dropdown">
       <button @click="mostrarOpciones = !mostrarOpciones" class="boton-principal">
         📥 Descargar
@@ -35,8 +38,8 @@
       </ul>
     </div>
 
-    <!-- Filtros de fecha -->
-    <div class="filtros-fecha">
+    <!-- Filtros debajo del botón -->
+    <div class="filtros-fecha-vertical">
       <select v-model="filtroFecha" @change="aplicarFiltroFecha">
         <option value="hoy">Hoy</option>
         <option value="2dias">Últimos 2 días</option>
@@ -56,7 +59,7 @@
 
 
 
-
+  
 
       
       
@@ -303,12 +306,6 @@ export default {
   overflow-y: auto;
 }
 
-.chat-header {
-  border-bottom: 1px solid #444;
-  padding-bottom: 10px;
-  margin-bottom: 20px;
-}
-
 .mensajes {
   flex: 1;
   display: flex;
@@ -413,9 +410,11 @@ export default {
 
 .dropdown {
   position: relative;
-  display: inline-block;
+  display: block; /* <-- cambia de inline-block a block */
   margin-top: 10px;
+  width: 100%; /* <-- asegura que ocupe todo el ancho disponible */
 }
+
 
 .boton-principal {
   background-color: #3498db;
@@ -483,7 +482,87 @@ export default {
   background-color: #16a085;
 }
 
+.chat-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  border-bottom: 1px solid #444;
+  padding-bottom: 10px;
+  margin-bottom: 20px;
+}
 
+.header-left {
+  flex: 1;
+}
+
+.header-right {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start; /* <-- cambia de flex-end a flex-start */
+  gap: 10px;
+  width: 250px; /* o 100% si prefieres full width */
+}
+
+
+/* Filtros debajo del botón */
+
+.filtros-fecha-vertical {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.filtros-fecha-vertical select {
+  width: 160px;
+  padding: 6px 8px;
+  border-radius: 4px;
+  border: none;
+  background-color: #34495e;
+  color: white;
+}
+
+
+.filtros-fecha-vertical .rango {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+}
+
+.filtros-fecha-vertical input[type="date"] {
+  width: 160px;
+  padding: 6px 8px;
+  border-radius: 4px;
+  border: none;
+  background-color: #34495e;
+  color: white;
+}
+
+.filtros-fecha-vertical button {
+  align-self: center;
+  padding: 6px 16px;
+  border: none;
+  border-radius: 4px;
+  background-color: #1abc9c;
+  color: white;
+  font-weight: bold;
+  cursor: pointer;
+  min-width: 100px;
+}
+
+
+
+.filtros-fecha-vertical input[type="date"] {
+  background-color: #34495e;
+  color: white;
+}
+
+
+.filtros-fecha-vertical button:hover {
+  background-color: #16a085;
+}
 
 
 
