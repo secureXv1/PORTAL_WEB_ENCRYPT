@@ -7,6 +7,9 @@ import TunelesView from './views/TunelesView.vue'
 import ArchivosView from './views/ArchivosView.vue'
 import ClientesView from './views/ClientesView.vue' 
 import BancoPssView from './views/BancoPssView.vue'
+import LicenciasView from './views/LicenciasView.vue'
+import UsuariosView from './views/UsuariosView.vue'
+import ConfiguracionView from './views/ConfiguracionView.vue'
 
 
 
@@ -25,6 +28,9 @@ const routes = [
       { path: 'multimedia', component: ArchivosView },
       { path: 'clientes', component: ClientesView },
       { path: 'banco_pss', component: BancoPssView },
+      { path: 'Licencias', component: LicenciasView },
+      { path: 'Usuarios', component: UsuariosView },
+      { path: 'Configuracion', component: ConfiguracionView },
 
       // puedes agregar más aquí
     ]

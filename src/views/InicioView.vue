@@ -19,11 +19,12 @@
       <div class="card">
         <h3>👥 Clientes online</h3>
         <ul class="usuarios">
-          <li v-for="u in usuarios" :key="u.uuid">
-            <strong>{{ u.hostname }}</strong><br />
-            <small>{{ u.sistema }}</small>
-          </li>
-        </ul>
+      <li v-for="u in usuarios" :key="u.uuid">
+      <strong>{{ u.hostname }}</strong><br />
+      <small>{{ u.sistema_operativo }}</small>
+      </li>
+      </ul>
+
       </div>
 
       <!-- Túneles online -->
@@ -74,18 +75,19 @@ export default {
     }
   },
   mounted() {
-    axios.get('http://symbolsaps.ddns.net:8000/api/usuarios')
-      .then(res => this.usuarios = res.data)
+  axios.get('http://symbolsaps.ddns.net:8000/api/clientes')
+    .then(res => this.usuarios = res.data)
 
-    axios.get('http://symbolsaps.ddns.net:8000/api/files')
-      .then(res => this.archivos = res.data)
+  axios.get('http://symbolsaps.ddns.net:8000/api/files')
+    .then(res => this.archivos = res.data)
 
-    axios.get('http://symbolsaps.ddns.net:8000/api/estadisticas/archivos-por-dia')
-      .then(res => {
-        this.chartData.labels = res.data.map(r => r.fecha)
-        this.chartData.datasets[0].data = res.data.map(r => r.total)
-      })
-  }
+  axios.get('http://symbolsaps.ddns.net:8000/api/estadisticas/archivos-por-dia')
+    .then(res => {
+      this.chartData.labels = res.data.map(r => r.fecha)
+      this.chartData.datasets[0].data = res.data.map(r => r.total)
+    })
+}
+
 }
 </script>
 

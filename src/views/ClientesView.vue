@@ -2,8 +2,22 @@
   <div class="clientes-container">
     <h2>👥 Clientes registrados</h2>
 
+    <!-- Buscador -->
     <input type="text" v-model="filtro" placeholder="Buscar por hostname o sistema..." class="buscador" />
 
+    <!-- Control de cantidad por página -->
+    <div class="control-pagina">
+      <label>Mostrar:</label>
+      <select v-model.number="porPagina">
+        <option :value="10">10</option>
+        <option :value="20">20</option>
+        <option :value="50">50</option>
+        <option :value="100">100</option>
+      </select>
+      <span>por página</span>
+    </div>
+
+    <!-- Tabla -->
     <table>
       <thead>
         <tr>
@@ -23,6 +37,7 @@
       </tbody>
     </table>
 
+    <!-- Paginación -->
     <div class="paginacion">
       <button @click="pagina--" :disabled="pagina === 1">Anterior</button>
       <span>Página {{ pagina }} de {{ totalPaginas }}</span>
@@ -41,7 +56,7 @@ export default {
       clientes: [],
       filtro: '',
       pagina: 1,
-      porPagina: 5
+      porPagina: 10 // valor inicial
     }
   },
   computed: {
@@ -57,6 +72,11 @@ export default {
     clientesPaginados() {
       const inicio = (this.pagina - 1) * this.porPagina
       return this.clientesFiltrados.slice(inicio, inicio + this.porPagina)
+    }
+  },
+  watch: {
+    porPagina() {
+      this.pagina = 1 // reinicia a la primera página si cambia el tamaño
     }
   },
   mounted() {
@@ -77,6 +97,22 @@ export default {
   padding: 8px;
   margin-bottom: 10px;
   width: 300px;
+}
+
+.control-pagina {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 15px;
+  color: white;
+}
+
+.control-pagina select {
+  padding: 4px 8px;
+  border-radius: 4px;
+  background-color: #34495e;
+  color: white;
+  border: none;
 }
 
 table {
