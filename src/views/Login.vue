@@ -11,6 +11,8 @@
 </template>
 
 <script>
+import axios from 'axios'
+
 export default {
   data() {
     return {
@@ -20,14 +22,26 @@ export default {
     }
   },
   methods: {
-    login() {
-      if (this.username === 'admin' && this.password === 'admin123') {
-        localStorage.setItem('loggedIn', 'true')
-        this.$router.push('/dashboard/inicio')
-      } else {
-        this.error = 'Credenciales incorrectas'
+    async login() {
+      this.error = ''
+      try {
+        const res = await axios.post('http://symbolsaps.ddns.net:8000/api/auth/login', {
+          username: this.username,
+          password: this.password
+        })
+
+        if (res.data.success) {
+          localStorage.setItem('loggedIn', 'true')
+          localStorage.setItem('rol', res.data.rol)
+          this.$router.push('/dashboard/inicio')
+        } else {
+          this.error = res.data.error || 'Credenciales incorrectas'
+        }
+      } catch (err) {
+        this.error = err.response?.data?.error || 'Error al conectar con el servidor'
       }
     }
   }
 }
 </script>
+
