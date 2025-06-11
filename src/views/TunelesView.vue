@@ -58,8 +58,7 @@
 
 
 
-      </div>
-
+      
       
       <div class="mensajes">
   <div
@@ -183,8 +182,8 @@ export default {
     } else if (this.filtroFecha === 'mes') {
       desde = new Date(hoy.setDate(hoy.getDate() - 29)).toISOString().split("T")[0]
     } else if (this.filtroFecha === 'personalizado') {
-      desde = this.fechaDesde
-      hasta = this.fechaHasta
+      desde = this.fechaDesde ? this.fechaDesde + ' 00:00:00' : null
+      hasta = this.fechaHasta ? this.fechaHasta + ' 23:59:59' : null
     }
 
     const params = {
@@ -204,8 +203,8 @@ export default {
 
     // Añadir filtros si existen
     if (this.filtroFecha === 'personalizado') {
-      if (this.fechaDesde) params.append('desde', this.fechaDesde)
-      if (this.fechaHasta) params.append('hasta', this.fechaHasta)
+    if (this.fechaDesde) params.append('desde', this.fechaDesde + ' 00:00:00')
+    if (this.fechaHasta) params.append('hasta', this.fechaHasta + ' 23:59:59')
     } else {
       const hoy = new Date()
       let desde = ''
