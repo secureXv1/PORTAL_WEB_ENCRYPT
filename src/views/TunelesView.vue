@@ -20,10 +20,47 @@
     <!-- Conversación -->
     <main class="chat-area">
       <div class="chat-header">
-        <h3>Tunel {{ tunelActivo?.name || '...' }}</h3>
-        <p v-if="tunelActivo">Creado el {{ formatearFecha(tunelActivo.created_at) }}</p>
+  <h3>Tunel {{ tunelActivo?.name || '...' }}</h3>
+  <p v-if="tunelActivo">Creado el {{ formatearFecha(tunelActivo.created_at) }}</p>
+
+  <div style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap; margin-top: 10px;">
+    <!-- Descarga -->
+    <div class="dropdown">
+      <button @click="mostrarOpciones = !mostrarOpciones" class="boton-principal">
+        📥 Descargar
+      </button>
+      <ul v-if="mostrarOpciones" class="menu-opciones">
+        <li @click="descargarChat('csv')">📄 Exportar como CSV</li>
+        <li @click="descargarChat('xlsx')">📘 Exportar como Excel</li>
+      </ul>
+    </div>
+
+    <!-- Filtros de fecha -->
+    <div class="filtros-fecha">
+      <select v-model="filtroFecha" @change="aplicarFiltroFecha">
+        <option value="hoy">Hoy</option>
+        <option value="2dias">Últimos 2 días</option>
+        <option value="semana">Última semana</option>
+        <option value="mes">Último mes</option>
+        <option value="personalizado">Personalizado</option>
+      </select>
+
+      <div v-if="filtroFecha === 'personalizado'" class="rango">
+        <input type="date" v-model="fechaDesde" />
+        <input type="date" v-model="fechaHasta" />
+        <button @click="aplicarFiltroFecha">Aplicar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+
+
+
       </div>
 
+      
       <div class="mensajes">
   <div
     v-for="msg in mensajes"
@@ -50,10 +87,11 @@
     <div class="participantes">
       <ul>
         <li v-for="p in participantes" :key="p.client_uuid">
-          <strong>{{ p.alias }}</strong><br />
+          <strong>{{ p.aliases.join(', ') }}</strong><br />
           <small>{{ p.hostname }}</small><br />
           <code>{{ p.client_uuid }}</code>
         </li>
+
       </ul>
     </div>
 
@@ -79,12 +117,16 @@ import axios from 'axios'
 export default {
   data() {
   return {
-    tuneles: [],
-    tunelActivo: null,
+    filtroFecha: "hoy",
+    fechaDesde: "",
+    fechaHasta: "",
     mensajes: [],
+    tunelActivo: null,
+    tuneles: [],
     archivos: [],
     participantes: [],
-    busqueda: ''
+    busqueda: '',
+    mostrarOpciones: false
   }
 }
 ,
@@ -97,7 +139,7 @@ export default {
     this.cargarTuneles()
   },
  methods: {
-  cargarTuneles() {
+    cargarTuneles() {
     axios.get('http://symbolsaps.ddns.net:8000/api/tunnels')
       .then(res => {
         this.tuneles = res.data
@@ -105,12 +147,10 @@ export default {
           this.seleccionarTunel(res.data[0])
         }
       })
-  },
-  seleccionarTunel(tunel) {
+    },
+    seleccionarTunel(tunel) {
     this.tunelActivo = tunel
-
-    axios.get(`http://symbolsaps.ddns.net:8000/api/messages?tunnel_id=${tunel.id}`)
-      .then(res => this.mensajes = res.data.reverse())
+    this.aplicarFiltroFecha()
 
     axios.get('http://symbolsaps.ddns.net:8000/api/files')
       .then(res => {
@@ -125,15 +165,85 @@ export default {
         console.error('❌ Error cargando participantes:', err)
         this.participantes = []
       })
+    },
+
+     aplicarFiltroFecha() {
+    if (!this.tunelActivo) return
+
+    const hoy = new Date()
+    let desde = null
+    let hasta = new Date().toISOString().split("T")[0]
+
+    if (this.filtroFecha === 'hoy') {
+      desde = hasta
+    } else if (this.filtroFecha === '2dias') {
+      desde = new Date(hoy.setDate(hoy.getDate() - 1)).toISOString().split("T")[0]
+    } else if (this.filtroFecha === 'semana') {
+      desde = new Date(hoy.setDate(hoy.getDate() - 6)).toISOString().split("T")[0]
+    } else if (this.filtroFecha === 'mes') {
+      desde = new Date(hoy.setDate(hoy.getDate() - 29)).toISOString().split("T")[0]
+    } else if (this.filtroFecha === 'personalizado') {
+      desde = this.fechaDesde
+      hasta = this.fechaHasta
+    }
+
+    const params = {
+      tunnel_id: this.tunelActivo.id,
+      desde: desde,
+      hasta: hasta
+    }
+
+    axios.get('http://symbolsaps.ddns.net:8000/api/messages', { params })
+      .then(res => this.mensajes = res.data.reverse())
   },
+
+   descargarChat(formato) {
+    if (!this.tunelActivo) return;
+
+    const params = new URLSearchParams({ formato })
+
+    // Añadir filtros si existen
+    if (this.filtroFecha === 'personalizado') {
+      if (this.fechaDesde) params.append('desde', this.fechaDesde)
+      if (this.fechaHasta) params.append('hasta', this.fechaHasta)
+    } else {
+      const hoy = new Date()
+      let desde = ''
+      let hasta = new Date().toISOString().split("T")[0]
+      if (this.filtroFecha === 'hoy') {
+        desde = hasta
+      } else if (this.filtroFecha === '2dias') {
+        desde = new Date(hoy.setDate(hoy.getDate() - 1)).toISOString().split("T")[0]
+      } else if (this.filtroFecha === 'semana') {
+        desde = new Date(hoy.setDate(hoy.getDate() - 6)).toISOString().split("T")[0]
+      } else if (this.filtroFecha === 'mes') {
+        desde = new Date(hoy.setDate(hoy.getDate() - 29)).toISOString().split("T")[0]
+      }
+      if (desde) {
+        params.append('desde', desde)
+        params.append('hasta', hasta)
+      }
+    }
+
+    const url = `http://symbolsaps.ddns.net:8000/api/tunnels/${this.tunelActivo.id}/export?${params.toString()}`
+    window.open(url, "_blank")
+    this.mostrarOpciones = false
+  },
+
+
   formatearFecha(fecha) {
   return new Date(fecha).toLocaleString()
   },
+
+
   getColorClass(alias) {
     const colores = ['color-1', 'color-2', 'color-3', 'color-4', 'color-5']
     const hash = alias.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0)
     return colores[hash % colores.length]
-  }
+  },
+
+  
+
 }
 
 }
@@ -301,6 +411,81 @@ export default {
   padding: 20px;
   border-top: 1px solid #444;
 }
+
+.dropdown {
+  position: relative;
+  display: inline-block;
+  margin-top: 10px;
+}
+
+.boton-principal {
+  background-color: #3498db;
+  color: white;
+  border: none;
+  padding: 8px 14px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: bold;
+}
+
+.menu-opciones {
+  position: absolute;
+  top: 110%;
+  left: 0;
+  background-color: #2c3e50;
+  border: 1px solid #444;
+  border-radius: 6px;
+  min-width: 180px;
+  z-index: 1000;
+  list-style: none;
+  padding: 0;
+  margin: 5px 0 0;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.menu-opciones li {
+  padding: 10px 14px;
+  cursor: pointer;
+  color: #ecf0f1;
+}
+
+.menu-opciones li:hover {
+  background-color: #3d566e;
+}
+
+
+.filtros-fecha {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 5px;
+}
+
+.filtros-fecha select,
+.filtros-fecha input {
+  padding: 6px;
+  border-radius: 4px;
+  border: none;
+  background-color: #34495e;
+  color: white;
+}
+
+.filtros-fecha button {
+  padding: 6px 12px;
+  border: none;
+  border-radius: 4px;
+  background-color: #1abc9c;
+  color: white;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.filtros-fecha button:hover {
+  background-color: #16a085;
+}
+
+
+
 
 
 
