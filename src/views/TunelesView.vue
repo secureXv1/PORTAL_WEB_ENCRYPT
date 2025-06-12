@@ -162,38 +162,37 @@ export default {
       })
     },
 
-     aplicarFiltroFecha() {
-    if (!this.tunelActivo) return
+    aplicarFiltroFecha() {
+  if (!this.tunelActivo) return;
 
-    const hoy = new Date()
-    let desde = null
-    let hasta = new Date().toISOString().split("T")[0]
+  const hoy = new Date();
+  let desde = null;
+  let hasta = new Date().toISOString().split("T")[0] + "T23:59:59";
 
-    if (this.filtroFecha === 'hoy') {
-      desde = hasta
-    } else if (this.filtroFecha === '2dias') {
-      desde = new Date(hoy.setDate(hoy.getDate() - 1)).toISOString().split("T")[0]
-    } else if (this.filtroFecha === 'semana') {
-      desde = new Date(hoy.setDate(hoy.getDate() - 6)).toISOString().split("T")[0]
-    } else if (this.filtroFecha === 'mes') {
-      desde = new Date(hoy.setDate(hoy.getDate() - 29)).toISOString().split("T")[0]
-    } else if (this.filtroFecha === 'personalizado') {
-      desde = this.fechaDesde ? this.fechaDesde + ' 00:00:00' : null
-      hasta = this.fechaHasta ? this.fechaHasta + ' 23:59:59' : null
-    }
+  if (this.filtroFecha === 'hoy') {
+    desde = new Date().toISOString().split("T")[0] + "T00:00:00";
+  } else if (this.filtroFecha === '2dias') {
+    desde = new Date(hoy.setDate(hoy.getDate() - 1)).toISOString().split("T")[0] + "T00:00:00";
+  } else if (this.filtroFecha === 'semana') {
+    desde = new Date(hoy.setDate(hoy.getDate() - 6)).toISOString().split("T")[0] + "T00:00:00";
+  } else if (this.filtroFecha === 'mes') {
+    desde = new Date(hoy.setDate(hoy.getDate() - 29)).toISOString().split("T")[0] + "T00:00:00";
+  } else if (this.filtroFecha === 'personalizado') {
+    desde = this.fechaDesde ? this.fechaDesde + "T00:00:00" : null;
+    hasta = this.fechaHasta ? this.fechaHasta + "T23:59:59" : null;
+  }
 
-    const params = {
-      tunnel_id: this.tunelActivo.id,
-      desde: desde,
-      hasta: hasta
-    }
+  const params = {
+    tunnel_id: this.tunelActivo.id,
+    desde: desde ? new Date(desde).getTime() : null,
+    hasta: hasta ? new Date(hasta).getTime() : null
+  };
 
-    axios.get('http://symbolsaps.ddns.net:8000/api/messages', { params })
-      .then(res => {
-  this.mensajes = res.data
-  this.scrollAlFinal()
-})
-
+  axios.get('http://symbolsaps.ddns.net:8000/api/messages', { params })
+    .then(res => {
+      this.mensajes = res.data;
+      this.scrollAlFinal();
+    });
   },
 
    descargarChat(formato) {
