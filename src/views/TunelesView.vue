@@ -19,70 +19,63 @@
 
     <!-- Conversación -->
     <main class="chat-area">
-
-      <div class="chat-header">
-  <div class="header-left">
-    <h3>Tunel {{ tunelActivo?.name || '...' }}</h3>
-    <p v-if="tunelActivo">Creado el {{ formatearFecha(tunelActivo.created_at) }}</p>
-  </div>
-
-  <div class="header-right">
-    <!-- Botón de descarga -->
-    <div class="dropdown">
-      <button @click="mostrarOpciones = !mostrarOpciones" class="boton-principal">
-        📥 Descargar
-      </button>
-      <ul v-if="mostrarOpciones" class="menu-opciones">
-        <li @click="descargarChat('csv')">📄 Exportar como CSV</li>
-        <li @click="descargarChat('xlsx')">📘 Exportar como Excel</li>
-      </ul>
+  <div class="chat-header">
+    <div class="header-left">
+      <h3>Tunel {{ tunelActivo?.name || '...' }}</h3>
+      <p v-if="tunelActivo">Creado el {{ formatearFecha(tunelActivo.created_at) }}</p>
     </div>
 
-    <!-- Filtros debajo del botón -->
-    <div class="filtros-fecha-vertical">
-      <select v-model="filtroFecha" @change="aplicarFiltroFecha">
-        <option value="hoy">Hoy</option>
-        <option value="2dias">Últimos 2 días</option>
-        <option value="semana">Última semana</option>
-        <option value="mes">Último mes</option>
-        <option value="personalizado">Personalizado</option>
-      </select>
+    <div class="header-right">
+      <!-- Botón de descarga -->
+      <div class="dropdown">
+        <button @click="mostrarOpciones = !mostrarOpciones" class="boton-principal">
+          📥 Descargar
+        </button>
+        <ul v-if="mostrarOpciones" class="menu-opciones">
+          <li @click="descargarChat('csv')">📄 Exportar como CSV</li>
+          <li @click="descargarChat('xlsx')">📘 Exportar como Excel</li>
+        </ul>
+      </div>
 
-      <div v-if="filtroFecha === 'personalizado'" class="rango">
-        <input type="date" v-model="fechaDesde" />
-        <input type="date" v-model="fechaHasta" />
-        <button @click="aplicarFiltroFecha">Aplicar</button>
+      <!-- Filtros debajo del botón -->
+      <div class="filtros-fecha-vertical">
+        <select v-model="filtroFecha" @change="aplicarFiltroFecha">
+          <option value="hoy">Hoy</option>
+          <option value="2dias">Últimos 2 días</option>
+          <option value="semana">Última semana</option>
+          <option value="mes">Último mes</option>
+          <option value="personalizado">Personalizado</option>
+        </select>
+
+        <div v-if="filtroFecha === 'personalizado'" class="rango">
+          <input type="date" v-model="fechaDesde" />
+          <input type="date" v-model="fechaHasta" />
+          <button @click="aplicarFiltroFecha">Aplicar</button>
+        </div>
       </div>
     </div>
   </div>
-</div>
 
+  <!-- ✅ Lista de mensajes -->
+  <div class="mensajes" ref="contenedorMensajes">
+    <div
+      v-for="msg in mensajes"
+      :key="msg.id"
+      class="mensaje-wrapper externo"
+    >
+      <div class="alias">
+        {{ msg.alias }} • {{ formatearFecha(msg.enviado_en) }}
+      </div>
 
-
-  
-
-      
-      
-      <div class="mensajes">
-  <div
-    v-for="msg in mensajes"
-    :key="msg.id"
-    class="mensaje-wrapper externo"
-  >
-    <div class="alias">
-  {{ msg.alias }} • {{ formatearFecha(msg.enviado_en) }}
-    </div>
-
-    <div :class="['burbuja', 'externo', getColorClass(msg.alias)]">
-      {{ msg.contenido }}
+      <div :class="['burbuja', 'externo', getColorClass(msg.alias)]">
+        {{ msg.contenido }}
+      </div>
     </div>
   </div>
-</div>
+</main>
 
-    </main>
-
-    <!-- Participantes y Archivos -->
-    <aside class="archivos">
+<!-- Participantes y Archivos -->
+<aside class="archivos">
   <div class="panel-contenedor">
     <!-- Participantes -->
     <h4>&nbsp;&nbsp;👥 Participantes ({{ participantes.length }})</h4>
@@ -93,7 +86,6 @@
           <small>{{ p.hostname }}</small><br />
           <code>{{ p.client_uuid }}</code>
         </li>
-
       </ul>
     </div>
 
@@ -108,6 +100,7 @@
     </div>
   </div>
 </aside>
+
 
 
   </div>
@@ -196,7 +189,11 @@ export default {
     }
 
     axios.get('http://symbolsaps.ddns.net:8000/api/messages', { params })
-      .then(res => this.mensajes = res.data.reverse())
+      .then(res => {
+  this.mensajes = res.data
+  this.scrollAlFinal()
+})
+
   },
 
    descargarChat(formato) {
@@ -243,6 +240,16 @@ export default {
     const hash = alias.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0)
     return colores[hash % colores.length]
   },
+
+  scrollAlFinal() {
+  this.$nextTick(() => {
+    const contenedor = this.$refs.contenedorMensajes
+    if (contenedor) {
+      contenedor.scrollTop = contenedor.scrollHeight
+    }
+  })
+},
+
 
   
 
