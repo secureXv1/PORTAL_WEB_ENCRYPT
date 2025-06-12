@@ -3,50 +3,77 @@
     <h2 class="titulo">Dashboard</h2>
 
     <div class="overview-cards">
-      <div class="card"><h4>Cantidad archivos</h4><p>{{ archivos.length }}</p><small>Último mes</small></div>
+      <!-- 📁 Cantidad de archivos con filtro -->
+      <div class="card relative">
+        <div class="card-header">
+          <h4>Cantidad archivos</h4>
+          <div class="dropdown">
+            <i class="fa-solid fa-filter" @click="mostrarFiltro = !mostrarFiltro"></i>
+            <ul v-if="mostrarFiltro" class="dropdown-menu">
+              <li @click="setRango('hoy')">Hoy</li>
+              <li @click="setRango('2dias')">Últimos 2 días</li>
+              <li @click="setRango('semana')">Última semana</li>
+              <li @click="setRango('mes')">Último mes</li>
+              <li @click="setRango('personalizado')">Personalizado</li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- Valor y rango -->
+        <p>{{ archivosFiltrados.length }}</p>
+        <small>{{ etiquetaRango }}</small>
+
+        <!-- Fechas personalizadas -->
+        <div v-if="rangoSeleccionado === 'personalizado'" class="rango-personalizado">
+          <label>Desde: <input type="date" v-model="fechaInicio" /></label>
+          <label>Hasta: <input type="date" v-model="fechaFin" /></label>
+          <button @click="aplicarRangoPersonalizado">Aplicar</button>
+        </div>
+      </div>
+
       <div class="card"><h4>Cantidad Clientes</h4><p>{{ usuarios.length }}</p></div>
       <div class="card"><h4>Licencias por vencer próximamente</h4><p>1</p><small>LIC-ABC123 15jun26</small></div>
     </div>
 
     <div class="grid">
-      <!-- Gráfico -->
+      <!-- 📈 Gráfico -->
       <div class="card wide">
         <h3>📊 Cantidad de archivos</h3>
         <Bar :data="chartData" :options="chartOptions" />
       </div>
 
-     <!-- Clientes online -->
+      <!-- 👥 Clientes online -->
       <div class="card scrollable-card">
-      <h3><i class="fa-solid fa-user-group"></i> Clientes online ({{ usuarios.length }})</h3>
-      <ul class="usuarios scrollable-list">
-      <li v-for="u in usuarios" :key="u.uuid">
-      <i class="fa-solid fa-user icono"></i>
-      <div class="info">
-        <strong>{{ u.hostname }}</strong><br />
-        <small>{{ u.sistema_operativo }}</small>
-      </div>
-      </li>
-      </ul>
+        <h3><i class="fa-solid fa-user-group"></i> Clientes online ({{ usuarios.length }})</h3>
+        <ul class="usuarios scrollable-list">
+          <li v-for="u in usuarios" :key="u.uuid">
+            <i class="fa-solid fa-user icono"></i>
+            <div class="info">
+              <strong>{{ u.hostname }}</strong><br />
+              <small>{{ u.sistema_operativo }}</small>
+            </div>
+          </li>
+        </ul>
       </div>
 
-      <!-- Túneles online -->
+      <!-- 🌐 Túneles online -->
       <div class="card scrollable-card">
-      <h3><i class="fa-solid fa-network-wired"></i> Túneles online ({{ tuneles.length }})</h3>
-      <ul class="usuarios scrollable-list">
-      <li v-for="t in tuneles" :key="t.id">
-      <i class="fa-solid fa-link icono"></i>
-      <div class="info">
-        <strong>{{ t.name }}</strong><br />
-        <small>Creado el {{ formatearFecha(t.created_at) }}</small>
+        <h3><i class="fa-solid fa-network-wired"></i> Túneles online ({{ tuneles.length }})</h3>
+        <ul class="usuarios scrollable-list">
+          <li v-for="t in tuneles" :key="t.id">
+            <i class="fa-solid fa-link icono"></i>
+            <div class="info">
+              <strong>{{ t.name }}</strong><br />
+              <small>Creado el {{ formatearFecha(t.created_at) }}</small>
+            </div>
+          </li>
+        </ul>
       </div>
-      </li>
-      </ul>
-      </div>
-
-
     </div>
   </div>
 </template>
+
+
 
 <script>
 import { Bar } from 'vue-chartjs'
@@ -62,50 +89,116 @@ ChartJS.register(Title, Tooltip, Legend, BarElement, CategoryScale, LinearScale)
 export default {
   components: { Bar },
   data() {
-    return {
-      usuarios: [],
-      archivos: [],
-      tuneles: [],
-      chartData: {
-        labels: [],
-        datasets: [{
-          label: 'Archivos subidos',
-          backgroundColor: '#42b983',
-          data: []
-        }]
-      },
-      chartOptions: {
-        responsive: true,
-        plugins: {
-          legend: { display: false },
-          title: { display: false }
-        }
+  return {
+    usuarios: [],
+    archivos: [],
+    archivosFiltrados: [],
+    tuneles: [],
+    mostrarFiltro: false,
+    rangoSeleccionado: 'mes',
+    etiquetaRango: 'Último mes',
+    fechaInicio: '',
+    fechaFin: '',
+    chartData: {
+      labels: [],
+      datasets: [{
+        label: 'Archivos subidos',
+        backgroundColor: '#42b983',
+        data: []
+      }]
+    },
+    chartOptions: {
+      responsive: true,
+      plugins: {
+        legend: { display: false },
+        title: { display: false }
       }
     }
-  },
-  methods: {
-    formatearFecha(fecha) {
-      return new Date(fecha).toLocaleString()
-    }
-  },
-  mounted() {
-    axios.get('http://symbolsaps.ddns.net:8000/api/clientes')
-      .then(res => this.usuarios = res.data)
-
-    axios.get('http://symbolsaps.ddns.net:8000/api/files')
-      .then(res => this.archivos = res.data)
-
-    axios.get('http://symbolsaps.ddns.net:8000/api/tunnels')
-      .then(res => this.tuneles = res.data)
-
-    axios.get('http://symbolsaps.ddns.net:8000/api/estadisticas/archivos-por-dia')
-      .then(res => {
-        this.chartData.labels = res.data.map(r => r.fecha)
-        this.chartData.datasets[0].data = res.data.map(r => r.total)
-      })
   }
+},
+methods: {
+  formatearFecha(fecha) {
+    return new Date(fecha).toLocaleString()
+  },
+  formatoFecha(fecha) {
+    return new Date(fecha).toLocaleDateString('es-CO', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric'
+    })
+  },
+  setRango(rango) {
+    this.rangoSeleccionado = rango
+    this.mostrarFiltro = false
+
+    const ahora = new Date()
+    let desde = new Date()
+
+    switch (rango) {
+      case 'hoy':
+        desde.setHours(0, 0, 0, 0)
+        this.etiquetaRango = 'Hoy'
+        break
+      case '2dias':
+        desde.setDate(ahora.getDate() - 2)
+        this.etiquetaRango = 'Últimos 2 días'
+        break
+      case 'semana':
+        desde.setDate(ahora.getDate() - 7)
+        this.etiquetaRango = 'Última semana'
+        break
+      case 'mes':
+        desde.setMonth(ahora.getMonth() - 1)
+        this.etiquetaRango = 'Último mes'
+        break
+      case 'personalizado':
+        this.etiquetaRango = 'Seleccione fechas'
+        return
+    }
+
+    this.archivosFiltrados = this.archivos.filter(a => new Date(a.fecha_subida) >= desde)
+  },
+  aplicarRangoPersonalizado() {
+    if (!this.fechaInicio || !this.fechaFin) {
+      this.etiquetaRango = 'Fechas incompletas'
+      return
+    }
+
+    const desde = new Date(this.fechaInicio)
+    const hasta = new Date(this.fechaFin)
+    hasta.setHours(23, 59, 59, 999)
+
+    this.archivosFiltrados = this.archivos.filter(a => {
+      const fecha = new Date(a.fecha_subida)
+      return fecha >= desde && fecha <= hasta
+    })
+
+    this.etiquetaRango = `Del ${this.formatoFecha(this.fechaInicio)} al ${this.formatoFecha(this.fechaFin)}`
+  }
+},
+mounted() {
+  axios.get('http://symbolsaps.ddns.net:8000/api/clientes')
+    .then(res => this.usuarios = res.data)
+
+  axios.get('http://symbolsaps.ddns.net:8000/api/files')
+    .then(res => {
+      this.archivos = res.data
+      this.setRango('mes')
+    })
+
+  axios.get('http://symbolsaps.ddns.net:8000/api/tunnels')
+    .then(res => this.tuneles = res.data)
+
+  axios.get('http://symbolsaps.ddns.net:8000/api/estadisticas/archivos-por-dia')
+    .then(res => {
+      this.chartData.labels = res.data.map(r => r.fecha)
+      this.chartData.datasets[0].data = res.data.map(r => r.total)
+    })
+}
+
 }
 </script>
+
 
 <style scoped>
 .inicio-container {
@@ -179,6 +272,66 @@ export default {
   min-width: 24px;
   text-align: center;
 }
+
+.relative {
+  position: relative;
+}
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.dropdown {
+  position: relative;
+  cursor: pointer;
+}
+.dropdown-menu {
+  position: absolute;
+  top: 25px;
+  right: 0;
+  background: #34495e;
+  list-style: none;
+  padding: 6px 0;
+  border-radius: 6px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+  z-index: 10;
+}
+.dropdown-menu li {
+  padding: 8px 15px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.dropdown-menu li:hover {
+  background-color: #3d566e;
+}
+
+.rango-personalizado {
+  margin-top: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.rango-personalizado label {
+  font-size: 14px;
+}
+.rango-personalizado input {
+  margin-left: 8px;
+  background-color: #34495e;
+  border: none;
+  padding: 6px;
+  color: white;
+  border-radius: 5px;
+}
+.rango-personalizado button {
+  align-self: flex-start;
+  padding: 6px 12px;
+  background-color: #1abc9c;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
 
 
 .info {
