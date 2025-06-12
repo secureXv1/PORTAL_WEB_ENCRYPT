@@ -9,33 +9,41 @@
     </div>
 
     <div class="grid">
-      <!-- Gráfico de archivos -->
+      <!-- Gráfico -->
       <div class="card wide">
         <h3>📊 Cantidad de archivos</h3>
         <Bar :data="chartData" :options="chartOptions" />
       </div>
 
-      <!-- Usuarios online -->
-      <div class="card">
-        <h3>👥 Clientes online</h3>
-        <ul class="usuarios">
+     <!-- Clientes online -->
+      <div class="card scrollable-card">
+      <h3><i class="fa-solid fa-user-group"></i> Clientes online ({{ usuarios.length }})</h3>
+      <ul class="usuarios scrollable-list">
       <li v-for="u in usuarios" :key="u.uuid">
-      <strong>{{ u.hostname }}</strong><br />
-      <small>{{ u.sistema_operativo }}</small>
+      <i class="fa-solid fa-user icono"></i>
+      <div class="info">
+        <strong>{{ u.hostname }}</strong><br />
+        <small>{{ u.sistema_operativo }}</small>
+      </div>
       </li>
       </ul>
-
       </div>
 
       <!-- Túneles online -->
-      <div class="card">
-        <h3>🛰️ Túneles online</h3>
-        <ul class="usuarios">
-          <li>Túnel: 1006 <br /><small>Hace 5 minutos</small></li>
-          <li>Túnel: Gatico <br /><small>Hace 1 minuto</small></li>
-          <li>Túnel: Gorro <br /><small>Hace 7 minutos</small></li>
-        </ul>
+      <div class="card scrollable-card">
+      <h3><i class="fa-solid fa-network-wired"></i> Túneles online ({{ tuneles.length }})</h3>
+      <ul class="usuarios scrollable-list">
+      <li v-for="t in tuneles" :key="t.id">
+      <i class="fa-solid fa-link icono"></i>
+      <div class="info">
+        <strong>{{ t.name }}</strong><br />
+        <small>Creado el {{ formatearFecha(t.created_at) }}</small>
       </div>
+      </li>
+      </ul>
+      </div>
+
+
     </div>
   </div>
 </template>
@@ -57,6 +65,7 @@ export default {
     return {
       usuarios: [],
       archivos: [],
+      tuneles: [],
       chartData: {
         labels: [],
         datasets: [{
@@ -74,20 +83,27 @@ export default {
       }
     }
   },
+  methods: {
+    formatearFecha(fecha) {
+      return new Date(fecha).toLocaleString()
+    }
+  },
   mounted() {
-  axios.get('http://symbolsaps.ddns.net:8000/api/clientes')
-    .then(res => this.usuarios = res.data)
+    axios.get('http://symbolsaps.ddns.net:8000/api/clientes')
+      .then(res => this.usuarios = res.data)
 
-  axios.get('http://symbolsaps.ddns.net:8000/api/files')
-    .then(res => this.archivos = res.data)
+    axios.get('http://symbolsaps.ddns.net:8000/api/files')
+      .then(res => this.archivos = res.data)
 
-  axios.get('http://symbolsaps.ddns.net:8000/api/estadisticas/archivos-por-dia')
-    .then(res => {
-      this.chartData.labels = res.data.map(r => r.fecha)
-      this.chartData.datasets[0].data = res.data.map(r => r.total)
-    })
-}
+    axios.get('http://symbolsaps.ddns.net:8000/api/tunnels')
+      .then(res => this.tuneles = res.data)
 
+    axios.get('http://symbolsaps.ddns.net:8000/api/estadisticas/archivos-por-dia')
+      .then(res => {
+        this.chartData.labels = res.data.map(r => r.fecha)
+        this.chartData.datasets[0].data = res.data.map(r => r.total)
+      })
+  }
 }
 </script>
 
@@ -96,7 +112,10 @@ export default {
   padding: 30px;
   background: #1e1e1e;
   color: white;
-  height: 100%;
+  height: 100vh;
+  overflow-y: auto;
+  box-sizing: border-box;
+  font-family: 'Inter', sans-serif;
 }
 .titulo {
   font-size: 28px;
@@ -113,6 +132,8 @@ export default {
   border-radius: 10px;
   flex: 1;
   min-width: 250px;
+  display: flex;
+  flex-direction: column;
 }
 .card p {
   font-size: 32px;
@@ -122,12 +143,45 @@ export default {
   display: flex;
   gap: 30px;
   flex-wrap: wrap;
+  align-items: stretch; /* 🔹 fuerza igual altura entre tarjetas */
 }
 .card.wide {
-  flex: 2;
+  flex: 1; /* 🔹 igual ancho a los otros */
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
 }
+.scrollable-card {
+  max-height: 300px;
+  overflow-y: auto;
+}
+.scrollable-list {
+  max-height: 220px;
+  overflow-y: auto;
+}
+.usuarios {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
 .usuarios li {
-  margin-bottom: 10px;
-  line-height: 1.3;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 0;
+  border-bottom: 1px solid #3a3a3a;
+}
+
+.icono {
+  color: #1abc9c;
+  font-size: 20px;
+  min-width: 24px;
+  text-align: center;
+}
+
+
+.info {
+  flex: 1;
 }
 </style>
