@@ -34,18 +34,30 @@
 </template>
 
 <script>
+import axios from 'axios'
+
 export default {
   name: 'UsuariosView',
   data() {
     return {
-      usuarios: [
-        { id: 1, nombre: 'admin@example.com', rol: 'admin', creado_en: '2025-06-09T10:00:00', menuAbierto: false },
-        { id: 2, nombre: 'proveedor1@example.com', rol: 'proveedor', creado_en: '2025-06-08T14:00:00', menuAbierto: false },
-        { id: 3, nombre: 'consulta@example.com', rol: 'consulta', creado_en: '2025-06-05T09:30:00', menuAbierto: false }
-      ]
+      usuarios: []
     }
   },
   methods: {
+    async cargarUsuarios() {
+      try {
+        const res = await axios.get('http://symbolsaps.ddns.net:8000/api/usuarios')
+        this.usuarios = res.data.map(u => ({
+          id: u.id,
+          nombre: u.username,
+          rol: u.rol,
+          creado_en: u.creado_en || new Date().toISOString(),
+          menuAbierto: false
+        }))
+      } catch (err) {
+        console.error('❌ Error al cargar usuarios:', err)
+      }
+    },
     formatearFecha(fecha) {
       return new Date(fecha).toLocaleString()
     },
@@ -63,9 +75,14 @@ export default {
     cancelarUsuario(usuario) {
       console.log('Cancelar usuario:', usuario.nombre)
     }
+  },
+  mounted() {
+    this.cargarUsuarios()
   }
 }
+
 </script>
+
 
 <style scoped>
 .usuarios-container {

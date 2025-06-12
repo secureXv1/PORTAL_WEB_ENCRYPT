@@ -5,7 +5,7 @@
     <div class="overview-cards">
       <div class="card"><h4>Cantidad archivos</h4><p>{{ archivos.length }}</p><small>Último mes</small></div>
       <div class="card"><h4>Cantidad Clientes</h4><p>{{ usuarios.length }}</p></div>
-      <div class="card"><h4>Licencias por vencer próximamente</h4><p>1</p><small>xxxxx 15jun26</small></div>
+      <div class="card"><h4>Licencias por vencer próximamente</h4><p>1</p><small>LIC-ABC123 15jun26</small></div>
     </div>
 
     <div class="grid">

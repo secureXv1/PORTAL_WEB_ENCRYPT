@@ -80,10 +80,22 @@ export default {
     }
   },
   mounted() {
-    axios.get('http://symbolsaps.ddns.net:8000/api/clientes')
-      .then(res => this.clientes = res.data)
-      .catch(err => console.error("❌ Error cargando clientes:", err))
+  axios.get('http://symbolsaps.ddns.net:8000/api/clientes')
+    .then(res => {
+      this.clientes = res.data.map(c => ({
+        ...c,
+        creado_en: this.formatearFechaLocal(c.creado_en)
+      }))
+    })
+    .catch(err => console.error("❌ Error cargando clientes:", err))
+},
+methods: {
+  formatearFechaLocal(ms) {
+    const fecha = new Date(Number(ms));
+    return fecha.toLocaleString(); // formato local (fecha + hora)
   }
+}
+
 }
 </script>
 
