@@ -31,7 +31,32 @@
         </div>
       </div>
 
-      <div class="card"><h4>Cantidad Clientes</h4><p>{{ usuarios.length }}</p></div>
+      <div class="card relative">
+  <div class="card-header">
+    <h4>Cantidad Clientes</h4>
+    <div class="dropdown">
+      <i class="fa-solid fa-filter" @click="mostrarFiltroClientes = !mostrarFiltroClientes"></i>
+      <ul v-if="mostrarFiltroClientes" class="dropdown-menu">
+        <li @click="setRangoClientes('hoy')">Hoy</li>
+        <li @click="setRangoClientes('2dias')">Últimos 2 días</li>
+        <li @click="setRangoClientes('semana')">Última semana</li>
+        <li @click="setRangoClientes('mes')">Último mes</li>
+        <li @click="setRangoClientes('personalizado')">Personalizado</li>
+      </ul>
+    </div>
+  </div>
+
+  <p>{{ usuariosFiltrados.length }}</p>
+  <small>{{ etiquetaRangoClientes }}</small>
+
+  <!-- Fechas personalizadas -->
+  <div v-if="rangoSeleccionadoClientes === 'personalizado'" class="rango-personalizado">
+    <label>Desde: <input type="date" v-model="fechaInicioClientes" /></label>
+    <label>Hasta: <input type="date" v-model="fechaFinClientes" /></label>
+    <button @click="aplicarRangoPersonalizadoClientes">Aplicar</button>
+  </div>
+</div>
+
       <div class="card"><h4>Licencias por vencer próximamente</h4><p>1</p><small>LIC-ABC123 15jun26</small></div>
     </div>
 
@@ -99,6 +124,16 @@ export default {
     etiquetaRango: 'Último mes',
     fechaInicio: '',
     fechaFin: '',
+    usuariosFiltrados: [],
+    mostrarFiltroClientes: false,
+    rangoSeleccionadoClientes: 'mes',
+    etiquetaRangoClientes: 'Último mes',
+    fechaInicioClientes: '',
+    fechaFinClientes: '',
+
+
+
+
     chartData: {
       labels: [],
       datasets: [{
@@ -174,11 +209,64 @@ methods: {
     })
 
     this.etiquetaRango = `Del ${this.formatoFecha(this.fechaInicio)} al ${this.formatoFecha(this.fechaFin)}`
+  },
+
+  setRangoClientes(rango) {
+  this.rangoSeleccionadoClientes = rango
+  this.mostrarFiltroClientes = false
+
+  const ahora = new Date()
+  let desde = new Date()
+
+  switch (rango) {
+    case 'hoy':
+      desde.setHours(0, 0, 0, 0)
+      this.etiquetaRangoClientes = 'Hoy'
+      break
+    case '2dias':
+      desde.setDate(ahora.getDate() - 2)
+      this.etiquetaRangoClientes = 'Últimos 2 días'
+      break
+    case 'semana':
+      desde.setDate(ahora.getDate() - 7)
+      this.etiquetaRangoClientes = 'Última semana'
+      break
+    case 'mes':
+      desde.setMonth(ahora.getMonth() - 1)
+      this.etiquetaRangoClientes = 'Último mes'
+      break
+    case 'personalizado':
+      this.etiquetaRangoClientes = 'Seleccione fechas'
+      return
   }
+
+  this.usuariosFiltrados = this.usuarios.filter(u => new Date(u.creado_en) >= desde)
+},
+
+aplicarRangoPersonalizadoClientes() {
+  if (!this.fechaInicioClientes || !this.fechaFinClientes) {
+    this.etiquetaRangoClientes = 'Fechas incompletas'
+    return
+  }
+
+  const desde = new Date(this.fechaInicioClientes)
+  const hasta = new Date(this.fechaFinClientes)
+  hasta.setHours(23, 59, 59, 999)
+
+  this.usuariosFiltrados = this.usuarios.filter(u => {
+    const fecha = new Date(u.creado_en)
+    return fecha >= desde && fecha <= hasta
+  })
+
+  this.etiquetaRangoClientes = `Del ${this.formatoFecha(this.fechaInicioClientes)} al ${this.formatoFecha(this.fechaFinClientes)}`
+}
+
+
+
+
 },
 mounted() {
-  axios.get('http://symbolsaps.ddns.net:8000/api/clientes')
-    .then(res => this.usuarios = res.data)
+  
 
   axios.get('http://symbolsaps.ddns.net:8000/api/files')
     .then(res => {
@@ -194,6 +282,16 @@ mounted() {
       this.chartData.labels = res.data.map(r => r.fecha)
       this.chartData.datasets[0].data = res.data.map(r => r.total)
     })
+
+
+    axios.get('http://symbolsaps.ddns.net:8000/api/clientes')
+  .then(res => {
+    this.usuarios = res.data
+    this.setRangoClientes('mes') // filtro inicial
+  })
+
+
+
 }
 
 }
