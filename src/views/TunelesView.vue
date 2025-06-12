@@ -202,8 +202,9 @@ export default {
 
     // Añadir filtros si existen
     if (this.filtroFecha === 'personalizado') {
-    if (this.fechaDesde) params.append('desde', this.fechaDesde + ' 00:00:00')
-    if (this.fechaHasta) params.append('hasta', this.fechaHasta + ' 23:59:59')
+    if (this.fechaDesde) params.append('desde', new Date(this.fechaDesde + 'T00:00:00').getTime())
+    if (this.fechaHasta) params.append('hasta', new Date(this.fechaHasta + 'T23:59:59').getTime())
+
     } else {
       const hoy = new Date()
       let desde = ''
@@ -218,9 +219,12 @@ export default {
         desde = new Date(hoy.setDate(hoy.getDate() - 29)).toISOString().split("T")[0]
       }
       if (desde) {
-        params.append('desde', desde)
-        params.append('hasta', hasta)
+      const desdeMs = new Date(desde + 'T00:00:00').getTime()
+      const hastaMs = new Date(hasta + 'T23:59:59').getTime()
+      params.append('desde', desdeMs)
+      params.append('hasta', hastaMs)
       }
+
     }
 
     const url = `http://symbolsaps.ddns.net:8000/api/tunnels/${this.tunelActivo.id}/export?${params.toString()}`
