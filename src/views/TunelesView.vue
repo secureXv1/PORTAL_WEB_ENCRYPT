@@ -92,11 +92,18 @@
     <!-- Archivos -->
     <h4>&nbsp;&nbsp;📁 Archivos ({{ archivos.length }})</h4>
     <div class="archivos-lista">
-      <ul>
+            <ul>
         <li v-for="file in archivos" :key="file.id">
-          {{ file.filename }}
+          <a
+            :href="`http://symbolsaps.ddns.net:8000/api/files/${file.id}/download?username=${username}`"
+            target="_blank"
+            class="archivo-link"
+          >
+            {{ file.filename }}
+          </a>
         </li>
       </ul>
+
     </div>
   </div>
 </aside>
@@ -121,7 +128,8 @@ export default {
     archivos: [],
     participantes: [],
     busqueda: '',
-    mostrarOpciones: false
+    mostrarOpciones: false,
+    username: localStorage.getItem("username") || ""
   }
 }
 ,
