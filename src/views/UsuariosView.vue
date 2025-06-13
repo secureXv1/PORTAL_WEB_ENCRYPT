@@ -50,13 +50,19 @@
           <h4>{{ u.nombre }}</h4>
           <p class="rol">Rol: <span :class="u.rol">{{ u.rol }}</span></p>
           <p class="fecha">Creado el {{ formatearFecha(u.creado_en) }}</p>
+          <p class="estado" :class="{ inactivo: !u.activo }">
+          Estado: <strong>{{ u.activo ? 'Activo' : 'Inactivo' }}</strong>
+          </p>
         </div>
 
         <div class="acciones">
           <button @click="toggleMenu(u.id)">⋮</button>
           <ul v-if="u.menuAbierto" class="menu">
             <li @click="cambiarRol(u)">🔄 Cambiar rol</li>
-            <li @click="cancelarUsuario(u)">🛑 Cancelar usuario</li>
+            <li @click="toggleActivo(u)">
+              {{ u.activo ? '🛑 Desactivar' : '✅ Activar' }}
+            </li>
+
           </ul>
         </div>
       </div>
@@ -91,6 +97,7 @@ export default {
           nombre: u.username,
           rol: u.rol,
           creado_en: u.creado_en || new Date().toISOString(),
+          activo: u.activo === 1 || u.activo === true, // <- importante
           menuAbierto: false
         }))
       } catch (err) {
@@ -148,7 +155,28 @@ export default {
         console.error('❌ Error al crear usuario:', err)
         this.error = 'No se pudo crear el usuario.'
       }
+    },
+
+    async toggleActivo(usuario) {
+  try {
+    const res = await axios.post(`http://symbolsaps.ddns.net:8000/api/usuarios/${usuario.id}/activar`, {
+      activo: !usuario.activo
+    })
+
+    if (res.data.success) {
+      usuario.activo = res.data.activo
+    } else {
+      alert('No se pudo actualizar el estado del usuario.')
     }
+  } catch (err) {
+    console.error('Error al actualizar estado:', err)
+    alert('Error en el servidor')
+  }
+}
+
+
+
+
   },
   mounted() {
     this.cargarUsuarios()
@@ -328,6 +356,11 @@ export default {
   background-color: #7f8c8d;
   color: white;
 }
+
+.estado.inactivo strong {
+  color: #e74c3c;
+}
+
 
 
 
