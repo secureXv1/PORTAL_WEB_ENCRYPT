@@ -115,9 +115,28 @@ export default {
         u.id === id ? { ...u, menuAbierto: !u.menuAbierto } : { ...u, menuAbierto: false }
       )
     },
-    cambiarRol(usuario) {
-      console.log('Cambiar rol a:', usuario.nombre)
-    },
+          async cambiarRol(usuario) {
+        const nuevoRol = usuario.rol === 'admin' ? 'consulta' : 'admin'
+
+        const confirmar = confirm(`¿Seguro que deseas cambiar el rol de ${usuario.nombre} a ${nuevoRol}?`)
+        if (!confirmar) return
+
+        try {
+          const res = await axios.post(`http://symbolsaps.ddns.net:8000/api/usuarios/${usuario.id}/cambiar-rol`, {
+            rol: nuevoRol
+          })
+
+          if (res.data.success) {
+            usuario.rol = nuevoRol
+            alert('✅ Rol actualizado correctamente')
+          } else {
+            alert('❌ No se pudo actualizar el rol')
+          }
+        } catch (err) {
+          console.error('Error al cambiar rol:', err)
+          alert('Error del servidor')
+        }
+      },
     cancelarUsuario(usuario) {
       console.log('Cancelar usuario:', usuario.nombre)
     },
