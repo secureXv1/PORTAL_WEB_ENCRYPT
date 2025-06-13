@@ -34,6 +34,28 @@
               </div>
 
 
+                        <!-- MODAL de cambio de contraseña -->
+          <div v-if="mostrarResetModal" class="modal-overlay">
+            <div class="modal">
+              <h3>🔑 Cambiar contraseña de {{ usuarioSeleccionado?.nombre }}</h3>
+
+              <label>Nueva contraseña</label>
+              <input v-model="nuevaPassword" type="password" placeholder="Nueva contraseña" />
+
+              <label>Confirmar contraseña</label>
+              <input v-model="confirmarPassword" type="password" placeholder="Confirmar contraseña" />
+
+              <div class="modal-error" v-if="error">{{ error }}</div>
+
+              <div class="modal-actions">
+                <button @click="confirmarResetPassword">Cambiar</button>
+                <button @click="cerrarResetModal">Cancelar</button>
+              </div>
+            </div>
+          </div>
+
+
+
 
 
     <!-- Resumen -->
@@ -62,6 +84,8 @@
             <li @click="toggleActivo(u)">
               {{ u.activo ? '🛑 Desactivar' : '✅ Activar' }}
             </li>
+            <li @click="abrirResetPassword(u)">🔑 Cambiar contraseña</li>
+
 
           </ul>
         </div>
@@ -79,6 +103,11 @@ export default {
     return {
       usuarios: [],
       mostrarFormulario: false,
+      mostrarResetModal: false,
+      usuarioSeleccionado: null,
+      nuevaPassword: '',
+      confirmarPassword: '',
+      username: localStorage.getItem('username') || '',
       error: '',
       nuevoUsuario: {
         username: '',
@@ -186,9 +215,47 @@ export default {
         alert('Error en el servidor')
       }
     },
+    abrirResetPassword(usuario) {
+      this.usuarioSeleccionado = usuario
+      this.mostrarResetModal = true
+      this.nuevaPassword = ''
+      this.confirmarPassword = ''
+      this.error = ''
+    },
+    cerrarResetModal() {
+      this.mostrarResetModal = false
+      this.usuarioSeleccionado = null
+    },
+    async confirmarResetPassword() {
+      if (!this.nuevaPassword || !this.confirmarPassword) {
+        this.error = 'Todos los campos son obligatorios.'
+        return
+      }
+
+      if (this.nuevaPassword !== this.confirmarPassword) {
+        this.error = 'Las contraseñas no coinciden.'
+        return
+      }
+
+      try {
+        const res = await axios.post(`http://symbolsaps.ddns.net:8000/api/usuarios/${this.usuarioSeleccionado.id}/reset-password`, {
+          nueva: this.nuevaPassword,
+          admin_username: this.username
+        })
+
+        if (res.data.success) {
+          alert('✅ Contraseña actualizada correctamente')
+          this.cerrarResetModal()
+        } else {
+          this.error = res.data.error || 'Ocurrió un error.'
+        }
+      } catch (err) {
+        console.error('❌ Error al resetear contraseña:', err)
+        this.error = 'Error del servidor.'
+      }
+    },
     handleClickOutside(event) {
       const menus = document.querySelectorAll('.acciones')
-
       let clickedInside = false
       menus.forEach(menu => {
         if (menu.contains(event.target)) {
@@ -210,6 +277,7 @@ export default {
   }
 }
 </script>
+
 
 
 
