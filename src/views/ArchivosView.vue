@@ -76,7 +76,14 @@
         <tr v-for="(archivo, index) in archivosFiltrados" :key="archivo.id">
           <td>{{ index + 1 }}</td>
           <td>
-            <a :href="`http://symbolsaps.ddns.net:8000/api/files/${archivo.id}/download`" target="_blank" class="archivo-link">
+            <a
+              :href="`http://symbolsaps.ddns.net:8000/api/files/${archivo.id}/download?username=${username}`"
+              target="_blank"
+              class="archivo-link"
+            >
+
+
+
               <img :src="obtenerIcono(archivo.filename)" class="icono-archivo" alt="icono" />
               <span class="nombre-archivo">{{ archivo.filename }}</span>
             </a>
@@ -98,6 +105,7 @@ export default {
   data() {
   return {
     archivos: [],
+    username: "",
     filtros: {
       desde: '',
       hasta: '',
@@ -140,6 +148,9 @@ export default {
       },
 
   mounted() {
+
+    this.username = localStorage.getItem("username")
+
     axios.get('http://symbolsaps.ddns.net:8000/api/files')
       .then(res => {
         this.archivos = res.data

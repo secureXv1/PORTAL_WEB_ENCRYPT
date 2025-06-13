@@ -97,7 +97,7 @@ export default {
           nombre: u.username,
           rol: u.rol,
           creado_en: u.creado_en || new Date().toISOString(),
-          activo: u.activo === 1 || u.activo === true, // <- importante
+          activo: u.activo === 1 || u.activo === true,
           menuAbierto: false
         }))
       } catch (err) {
@@ -115,34 +115,29 @@ export default {
         u.id === id ? { ...u, menuAbierto: !u.menuAbierto } : { ...u, menuAbierto: false }
       )
     },
-          async cambiarRol(usuario) {
-        const nuevoRol = usuario.rol === 'admin' ? 'consulta' : 'admin'
+    async cambiarRol(usuario) {
+      const nuevoRol = usuario.rol === 'admin' ? 'consulta' : 'admin'
+      const confirmar = confirm(`¿Seguro que deseas cambiar el rol de ${usuario.nombre} a ${nuevoRol}?`)
+      if (!confirmar) return
 
-        const confirmar = confirm(`¿Seguro que deseas cambiar el rol de ${usuario.nombre} a ${nuevoRol}?`)
-        if (!confirmar) return
+      try {
+        const res = await axios.post(`http://symbolsaps.ddns.net:8000/api/usuarios/${usuario.id}/cambiar-rol`, {
+          rol: nuevoRol
+        })
 
-        try {
-          const res = await axios.post(`http://symbolsaps.ddns.net:8000/api/usuarios/${usuario.id}/cambiar-rol`, {
-            rol: nuevoRol
-          })
-
-          if (res.data.success) {
-            usuario.rol = nuevoRol
-            alert('✅ Rol actualizado correctamente')
-          } else {
-            alert('❌ No se pudo actualizar el rol')
-          }
-        } catch (err) {
-          console.error('Error al cambiar rol:', err)
-          alert('Error del servidor')
+        if (res.data.success) {
+          usuario.rol = nuevoRol
+          alert('✅ Rol actualizado correctamente')
+        } else {
+          alert('❌ No se pudo actualizar el rol')
         }
-      },
-    cancelarUsuario(usuario) {
-      console.log('Cancelar usuario:', usuario.nombre)
+      } catch (err) {
+        console.error('Error al cambiar rol:', err)
+        alert('Error del servidor')
+      }
     },
     async crearUsuario() {
       this.error = ''
-
       const { username, password, confirmar, rol } = this.nuevoUsuario
 
       if (!username || !password || !confirmar) {
@@ -175,33 +170,47 @@ export default {
         this.error = 'No se pudo crear el usuario.'
       }
     },
-
     async toggleActivo(usuario) {
-  try {
-    const res = await axios.post(`http://symbolsaps.ddns.net:8000/api/usuarios/${usuario.id}/activar`, {
-      activo: !usuario.activo
-    })
+      try {
+        const res = await axios.post(`http://symbolsaps.ddns.net:8000/api/usuarios/${usuario.id}/activar`, {
+          activo: !usuario.activo
+        })
 
-    if (res.data.success) {
-      usuario.activo = res.data.activo
-    } else {
-      alert('No se pudo actualizar el estado del usuario.')
+        if (res.data.success) {
+          usuario.activo = res.data.activo
+        } else {
+          alert('No se pudo actualizar el estado del usuario.')
+        }
+      } catch (err) {
+        console.error('Error al actualizar estado:', err)
+        alert('Error en el servidor')
+      }
+    },
+    handleClickOutside(event) {
+      const menus = document.querySelectorAll('.acciones')
+
+      let clickedInside = false
+      menus.forEach(menu => {
+        if (menu.contains(event.target)) {
+          clickedInside = true
+        }
+      })
+
+      if (!clickedInside) {
+        this.usuarios = this.usuarios.map(u => ({ ...u, menuAbierto: false }))
+      }
     }
-  } catch (err) {
-    console.error('Error al actualizar estado:', err)
-    alert('Error en el servidor')
-  }
-}
-
-
-
-
   },
   mounted() {
     this.cargarUsuarios()
+    document.addEventListener('click', this.handleClickOutside)
+  },
+  beforeUnmount() {
+    document.removeEventListener('click', this.handleClickOutside)
   }
 }
 </script>
+
 
 
 

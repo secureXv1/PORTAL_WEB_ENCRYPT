@@ -227,7 +227,10 @@ export default {
 
     }
 
+    const username = localStorage.getItem('username')
+    params.append('username', username)
     const url = `http://symbolsaps.ddns.net:8000/api/tunnels/${this.tunelActivo.id}/export?${params.toString()}`
+
     window.open(url, "_blank")
     this.mostrarOpciones = false
   },

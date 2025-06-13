@@ -39,27 +39,34 @@ export default {
     username() {
       return localStorage.getItem('username') || 'usuario'
     },
-              menu() {
-            const baseMenu = [
-              { view: 'inicio', label: 'Inicio', icon: '🏠' },
-              { view: 'tuneles', label: 'Túneles', icon: '🛰️' },
-              { view: 'multimedia', label: 'Archivos', icon: '🗂️' },
-              { view: 'clientes', label: 'Clientes', icon: '👥' },
-              { view: 'banco_pss', label: 'Banco pss', icon: '🔐' },
-              { view: 'configuracion', label: 'Configuración', icon: '⚙️' } // visible para ambos
-            ]
-
-            const adminExtras = [
-              { view: 'licencias', label: 'Licencias', icon: '📄' },
-              { view: 'usuarios', label: 'Usuarios', icon: '👤' }
-            ]
-
-            return this.rol === 'admin' ? [...baseMenu, ...adminExtras] : baseMenu
-          }
-
-  },
+    menu() {
+      const baseMenu = [
+        { view: 'inicio', label: 'Inicio', icon: '🏠' },
+        { view: 'tuneles', label: 'Túneles', icon: '🛰️' },
+        { view: 'multimedia', label: 'Archivos', icon: '🗂️' },
+        { view: 'clientes', label: 'Clientes', icon: '👥' },
+        { view: 'banco_pss', label: 'Banco pss', icon: '🔐' },
+        { view: 'configuracion', label: 'Configuración', icon: '⚙️' }
+      ]
+      const adminExtras = [
+        { view: 'licencias', label: 'Licencias', icon: '📄' },
+        { view: 'usuarios', label: 'Usuarios', icon: '👤' }
+      ]
+      return this.rol === 'admin' ? [...baseMenu, ...adminExtras] : baseMenu
+    }
+  }, // 👈 ESTA COMA ES NECESARIA
   methods: {
-    logout() {
+    async logout() {
+      const username = localStorage.getItem('username')
+      try {
+        await fetch('http://symbolsaps.ddns.net:8000/api/auth/logout', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username })
+        })
+      } catch (err) {
+        console.warn('⚠️ Error registrando logout:', err)
+      }
       localStorage.removeItem('loggedIn')
       localStorage.removeItem('rol')
       localStorage.removeItem('username')
@@ -74,6 +81,7 @@ export default {
   }
 }
 </script>
+
 
 
 <style scoped>
