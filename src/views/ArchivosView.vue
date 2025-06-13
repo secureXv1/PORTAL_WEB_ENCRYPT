@@ -2,52 +2,82 @@
   <div class="archivos-container">
     <h2>📁 Archivos compartidos</h2>
 
+    <!-- FILTROS MULTIPLES -->
+
+    
+             <div class="filtros">
+                <!-- Rango de fechas -->
+                <div class="filtro-grupo">
+                  <label>Desde:</label>
+                  <input type="date" v-model="filtros.desde" />
+                  <label>Hasta:</label>
+                  <input type="date" v-model="filtros.hasta" />
+                </div>
+
+                <!-- Túneles -->
+                <div class="filtro-grupo">
+                  <label><strong>Túneles:</strong></label>
+                  <label v-for="t in tunelesUnicos" :key="t">
+                    <input type="checkbox" :value="t" v-model="filtros.tuneles" />
+                    {{ t }}
+                  </label>
+                </div>
+
+                <!-- Alias -->
+                <div class="filtro-grupo">
+                  <label><strong>Alias:</strong></label>
+                  <label v-for="a in aliasUnicos" :key="a">
+                    <input type="checkbox" :value="a" v-model="filtros.alias" />
+                    {{ a }}
+                  </label>
+                </div>
+
+                <!-- Clientes -->
+                <div class="filtro-grupo">
+                  <label><strong>Clientes:</strong></label>
+                  <label v-for="c in clientesUnicos" :key="c">
+                    <input type="checkbox" :value="c" v-model="filtros.clientes" />
+                    {{ c }}
+                  </label>
+                </div>
+
+                <!-- Limpiar -->
+                <div class="filtro-grupo">
+                  <button @click="limpiarFiltros">🧹 Limpiar</button>
+                </div>
+              </div>
+
+
+
+
+    <!-- TABLA -->
     <table>
-      
       <thead>
         <tr>
           <th>#</th>
-                    <th @click="ordenarPor('filename')" style="cursor: pointer;">
-            Archivo
-            <span v-if="orden.campo === 'filename'">{{ orden.asc ? '↑' : '↓' }}</span>
+          <th @click="ordenarPor('filename')" style="cursor: pointer;">
+            Archivo <span v-if="orden.campo === 'filename'">{{ orden.asc ? '↑' : '↓' }}</span>
           </th>
-
           <th @click="ordenarPor('uploaded_at')" style="cursor: pointer;">
-            Fecha de subida
-            <span v-if="orden.campo === 'uploaded_at'">{{ orden.asc ? '↑' : '↓' }}</span>
+            Fecha de subida <span v-if="orden.campo === 'uploaded_at'">{{ orden.asc ? '↑' : '↓' }}</span>
           </th>
-
           <th @click="ordenarPor('tunnel_name')" style="cursor: pointer;">
-            Túnel
-            <span v-if="orden.campo === 'tunnel_name'">{{ orden.asc ? '↑' : '↓' }}</span>
+            Túnel <span v-if="orden.campo === 'tunnel_name'">{{ orden.asc ? '↑' : '↓' }}</span>
           </th>
-
           <th @click="ordenarPor('sender_alias')" style="cursor: pointer;">
-            Alias
-            <span v-if="orden.campo === 'sender_alias'">{{ orden.asc ? '↑' : '↓' }}</span>
+            Alias <span v-if="orden.campo === 'sender_alias'">{{ orden.asc ? '↑' : '↓' }}</span>
           </th>
-
           <th @click="ordenarPor('client_uuid')" style="cursor: pointer;">
-            Cliente
-            <span v-if="orden.campo === 'client_uuid'">{{ orden.asc ? '↑' : '↓' }}</span>
+            Cliente <span v-if="orden.campo === 'client_uuid'">{{ orden.asc ? '↑' : '↓' }}</span>
           </th>
-
         </tr>
       </thead>
       <tbody>
-        <tr v-for="(archivo, index) in archivos" :key="archivo.id">
+        <tr v-for="(archivo, index) in archivosFiltrados" :key="archivo.id">
           <td>{{ index + 1 }}</td>
           <td>
-            <a
-              :href="`http://symbolsaps.ddns.net:8000/api/files/${archivo.id}/download`"
-              target="_blank"
-              class="archivo-link"
-            >
-              <img
-                :src="obtenerIcono(archivo.filename)"
-                class="icono-archivo"
-                alt="icono"
-              />
+            <a :href="`http://symbolsaps.ddns.net:8000/api/files/${archivo.id}/download`" target="_blank" class="archivo-link">
+              <img :src="obtenerIcono(archivo.filename)" class="icono-archivo" alt="icono" />
               <span class="nombre-archivo">{{ archivo.filename }}</span>
             </a>
           </td>
@@ -66,15 +96,49 @@ import axios from 'axios'
 
 export default {
   data() {
-    return {
-      archivos: [],
-
-      orden: {
+  return {
+    archivos: [],
+    filtros: {
+      desde: '',
+      hasta: '',
+      tuneles: [],
+      alias: [],
+      clientes: []
+    },
+    orden: {
       campo: null,
       asc: true
     }
-    }
-  },
+  }
+},
+
+      computed: {
+        tunelesUnicos() {
+          return [...new Set(this.archivos.map(a => a.tunnel_name).filter(Boolean))].sort()
+        },
+        aliasUnicos() {
+          return [...new Set(this.archivos.map(a => a.sender_alias).filter(Boolean))].sort()
+        },
+        clientesUnicos() {
+          return [...new Set(this.archivos.map(a => a.client_uuid).filter(Boolean))].sort()
+        },
+        archivosFiltrados() {
+          return this.archivos.filter(a => {
+            const fecha = new Date(a.uploaded_at)
+            const desde = this.filtros.desde ? new Date(this.filtros.desde) : null
+            const hasta = this.filtros.hasta ? new Date(this.filtros.hasta + 'T23:59:59') : null
+
+            const fechaOk = (!desde || fecha >= desde) && (!hasta || fecha <= hasta)
+            const tunelOk = this.filtros.tuneles.length === 0 || this.filtros.tuneles.includes(a.tunnel_name)
+            const aliasOk = this.filtros.alias.length === 0 || this.filtros.alias.includes(a.sender_alias)
+            const clienteOk = this.filtros.clientes.length === 0 || this.filtros.clientes.includes(a.client_uuid)
+
+            return fechaOk && tunelOk && aliasOk && clienteOk
+          })
+        }
+
+      },
+
   mounted() {
     axios.get('http://symbolsaps.ddns.net:8000/api/files')
       .then(res => {
@@ -84,13 +148,12 @@ export default {
         console.error("❌ Error al cargar archivos:", err)
       })
   },
-      methods: {
+    methods: {
       obtenerIcono(filename) {
         const ext = filename.split('.').pop().toLowerCase()
         const iconos = ['pdf', 'docx', 'xlsx', 'ppt', 'png', 'jpg', 'jpeg', 'gif', 'mp4', 'mp3', 'zip', 'rar', 'txt', 'json']
         return `/assets/icons/${iconos.includes(ext) ? ext : 'default'}.png`
       },
-
       ordenarPor(campo) {
         if (this.orden.campo === campo) {
           this.orden.asc = !this.orden.asc
@@ -104,7 +167,6 @@ export default {
           const valB = b[campo] || ''
 
           if (campo === 'uploaded_at') {
-            // Comparar como fechas
             return this.orden.asc
               ? new Date(valA) - new Date(valB)
               : new Date(valB) - new Date(valA)
@@ -114,6 +176,13 @@ export default {
             ? valA.toString().localeCompare(valB.toString())
             : valB.toString().localeCompare(valA.toString())
         })
+      },
+      limpiarFiltros() {
+        this.filtros.desde = ''
+        this.filtros.hasta = ''
+        this.filtros.tuneles = []
+        this.filtros.alias = []
+        this.filtros.clientes = []
       }
     }
 
@@ -126,15 +195,34 @@ export default {
   color: white;
 }
 
+.filtros {
+  margin-bottom: 15px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+}
+
+.filtro-grupo {
+  display: flex;
+  flex-direction: column;
+  background: #2f2f2f;
+  padding: 10px;
+  border-radius: 6px;
+  max-height: 200px;
+  overflow-y: auto;
+  min-width: 150px;
+  color: white;
+  font-size: 14px;
+}
+
 table {
   width: 100%;
   border-collapse: collapse;
   margin-top: 20px;
   background-color: #2c3e50;
   color: white;
-  table-layout: auto; /* ← permite autoajuste */
+  table-layout: auto;
 }
-
 
 th, td {
   padding: 10px;
@@ -147,6 +235,7 @@ th, td {
 
 th {
   background-color: #1abc9c;
+  cursor: pointer;
 }
 
 tbody tr:hover {
@@ -179,6 +268,26 @@ tbody tr:hover {
   width: 20px;
   height: 20px;
   flex-shrink: 0;
+}
+
+.filtro-grupo select,
+.filtro-grupo input[type="date"] {
+  background: #1e1e1e;
+  color: white;
+  border: 1px solid #666;
+  border-radius: 4px;
+  padding: 4px;
+  margin-top: 4px;
+}
+.filtro-grupo {
+  display: flex;
+  flex-direction: column;
+  background: #2f2f2f;
+  padding: 10px;
+  border-radius: 6px;
+  max-height: 200px;
+  overflow-y: auto;
+  min-width: 150px;
 }
 
 
