@@ -10,9 +10,6 @@ import LicenciasView from './views/LicenciasView.vue'
 import UsuariosView from './views/UsuariosView.vue'
 import ConfiguracionView from './views/ConfiguracionView.vue'
 
-
-
-
 const routes = [
   { path: '/', redirect: '/login' },
   { path: '/login', component: Login },
@@ -22,15 +19,13 @@ const routes = [
     children: [
       { path: '', redirect: 'inicio' },
       { path: 'inicio', component: InicioView },
-      { path: 'tuneles', component: TunelesView }, 
+      { path: 'tuneles', component: TunelesView },
       { path: 'multimedia', component: ArchivosView },
       { path: 'clientes', component: ClientesView },
       { path: 'banco_pss', component: BancoPssView },
-      { path: 'Licencias', component: LicenciasView },
-      { path: 'Usuarios', component: UsuariosView },
-      { path: 'Configuracion', component: ConfiguracionView },
-
-      // puedes agregar más aquí
+      { path: 'licencias', component: LicenciasView },
+      { path: 'usuarios', component: UsuariosView },
+      { path: 'configuracion', component: ConfiguracionView },
     ]
   }
 ]
@@ -40,15 +35,27 @@ const router = createRouter({
   routes,
 })
 
-// 🔒 Protección de rutas: requiere estar logueado
+// 🔐 Protección de rutas
 router.beforeEach((to, from, next) => {
   const loggedIn = localStorage.getItem('loggedIn') === 'true'
+  const rol = localStorage.getItem('rol') || 'consulta'
 
   if (to.path.startsWith('/dashboard') && !loggedIn) {
-    next('/login') // redirige al login si no está autenticado
-  } else {
-    next() // permite la navegación
+    return next('/login')
   }
+
+  // Solo admin puede acceder a estas rutas:
+  const soloAdmin = [
+    '/dashboard/licencias',
+    '/dashboard/usuarios'
+  ]
+
+  if (soloAdmin.includes(to.path.toLowerCase()) && rol !== 'admin') {
+    alert('🔒 Acceso restringido a administradores')
+    return next('/dashboard/inicio')
+  }
+
+  next()
 })
 
 export default router

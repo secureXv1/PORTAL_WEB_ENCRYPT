@@ -3,7 +3,7 @@
     <div class="topbar">
       <div class="branding">
         <h1>Encrypt</h1>
-        <p>Hola <strong>@user</strong></p>
+        <p>Hola <strong>{{ username }}</strong></p>
       </div>
       <button class="logout" @click="logout">Cerrar sesión</button>
     </div>
@@ -11,7 +11,12 @@
     <div class="layout">
       <aside class="sidebar">
         <ul>
-          <li v-for="item in menu" :key="item.label" :class="{ active: isActive(item.view) }" @click="navigate(item.view)">
+          <li
+            v-for="item in menu"
+            :key="item.label"
+            :class="{ active: isActive(item.view) }"
+            @click="navigate(item.view)"
+          >
             <span class="icon">{{ item.icon }}</span>
             <span>{{ item.label }}</span>
           </li>
@@ -27,23 +32,37 @@
 
 <script>
 export default {
-  data() {
-    return {
-      menu: [
-        { view: 'inicio', label: 'Inicio', icon: '🏠' },
-        { view: 'tuneles', label: 'Túneles', icon: '🛰️' },
-        { view: 'multimedia', label: 'Archivos', icon: '🗂️' },
-        { view: 'clientes', label: 'Clientes', icon: '👥' },
-        { view: 'banco_pss', label: 'Banco pss', icon: '🔐' },
-        { view: 'licencias', label: 'Licencias', icon: '📄' },
-        { view: 'usuarios', label: 'Usuarios', icon: '👤' },
-        { view: 'configuracion', label: 'Configuración', icon: '⚙️' }
-      ]
-    }
+  computed: {
+    rol() {
+      return localStorage.getItem('rol') || 'consulta'
+    },
+    username() {
+      return localStorage.getItem('username') || 'usuario'
+    },
+              menu() {
+            const baseMenu = [
+              { view: 'inicio', label: 'Inicio', icon: '🏠' },
+              { view: 'tuneles', label: 'Túneles', icon: '🛰️' },
+              { view: 'multimedia', label: 'Archivos', icon: '🗂️' },
+              { view: 'clientes', label: 'Clientes', icon: '👥' },
+              { view: 'banco_pss', label: 'Banco pss', icon: '🔐' },
+              { view: 'configuracion', label: 'Configuración', icon: '⚙️' } // visible para ambos
+            ]
+
+            const adminExtras = [
+              { view: 'licencias', label: 'Licencias', icon: '📄' },
+              { view: 'usuarios', label: 'Usuarios', icon: '👤' }
+            ]
+
+            return this.rol === 'admin' ? [...baseMenu, ...adminExtras] : baseMenu
+          }
+
   },
   methods: {
     logout() {
       localStorage.removeItem('loggedIn')
+      localStorage.removeItem('rol')
+      localStorage.removeItem('username')
       this.$router.push('/login')
     },
     navigate(view) {
@@ -55,6 +74,7 @@ export default {
   }
 }
 </script>
+
 
 <style scoped>
 .dashboard-wrapper {
