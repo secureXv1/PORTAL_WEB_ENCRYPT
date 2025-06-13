@@ -17,21 +17,21 @@
         <label>Confirmar nueva contraseña</label>
         <input type="password" v-model="confirmarPassword" />
       </div>
-      <button class="boton-principal">Actualizar contraseña</button>
+      <button class="boton-principal" @click="cambiarPassword">Actualizar contraseña</button>
     </section>
 
-    <!-- Sección: Perfil -->
-    <section class="seccion">
+    <!-- Sección: Perfil (desactivada visualmente si no se usa) -->
+    <section class="seccion" style="opacity: 0.5; pointer-events: none;">
       <h3>🧑‍💻​ Perfil</h3>
       <div class="form-group">
         <label>Alias</label>
-        <input type="text" v-model="alias" />
+        <input type="text" v-model="alias" disabled />
       </div>
       <div class="form-group">
         <label>Tipo de perfil</label>
         <input type="text" :value="rol" disabled />
       </div>
-      <button class="boton-principal">Actualizar perfil</button>
+      <button class="boton-principal" disabled>Actualizar perfil</button>
     </section>
 
     <!-- Sección: Sesión -->
@@ -49,9 +49,52 @@ export default {
       passwordActual: '',
       nuevaPassword: '',
       confirmarPassword: '',
-      alias: 'UsuarioDemo',
-      rol: 'admin', // Este valor puede venir del backend o localStorage
+      alias: localStorage.getItem("username") || "UsuarioDemo",
+      rol: localStorage.getItem("rol") || "consulta",
       ultimaSesion: '2025-06-12 09:12 desde Bogotá'
+    }
+  },
+  methods: {
+    async cambiarPassword() {
+      const username = localStorage.getItem("username")
+
+      if (!this.passwordActual || !this.nuevaPassword || !this.confirmarPassword) {
+        alert("⚠️ Todos los campos son obligatorios")
+        return
+      }
+
+      if (this.nuevaPassword !== this.confirmarPassword) {
+        alert("⚠️ La nueva contraseña no coincide con la confirmación")
+        return
+      }
+
+      if (this.nuevaPassword.length < 6) {
+        alert("⚠️ La nueva contraseña debe tener al menos 6 caracteres")
+        return
+      }
+
+      try {
+        const res = await fetch("http://symbolsaps.ddns.net:8000/api/auth/change-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username, anterior: this.passwordActual, nueva: this.nuevaPassword })
+        })
+
+
+        const data = await res.json()
+
+        if (data.success) {
+          alert("✅ Contraseña actualizada correctamente")
+          this.passwordActual = ''
+          this.nuevaPassword = ''
+          this.confirmarPassword = ''
+        } else {
+          alert(`❌ Error: ${data.error}`)
+        }
+      } catch (e) {
+        alert("❌ Error de red o del servidor")
+        console.error(e)
+      }
     }
   }
 }

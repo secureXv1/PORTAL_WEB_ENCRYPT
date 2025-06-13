@@ -36,6 +36,7 @@ export default {
         if (res.data.success) {
           localStorage.setItem('loggedIn', 'true')
           localStorage.setItem('rol', res.data.rol)
+          localStorage.setItem('username', res.data.username)
           this.$router.push('/dashboard/inicio')
         } else {
           this.error = res.data.error || 'Credenciales incorrectas'
