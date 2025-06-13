@@ -9,6 +9,7 @@ import BancoPssView from './views/BancoPssView.vue'
 import LicenciasView from './views/LicenciasView.vue'
 import UsuariosView from './views/UsuariosView.vue'
 import ConfiguracionView from './views/ConfiguracionView.vue'
+import LogView from './views/LogView.vue'
 
 const routes = [
   { path: '/', redirect: '/login' },
@@ -26,6 +27,7 @@ const routes = [
       { path: 'licencias', component: LicenciasView },
       { path: 'usuarios', component: UsuariosView },
       { path: 'configuracion', component: ConfiguracionView },
+      { path: 'log', component: LogView }, 
     ]
   }
 ]
@@ -44,10 +46,11 @@ router.beforeEach((to, from, next) => {
     return next('/login')
   }
 
-  // Solo admin puede acceder a estas rutas:
+  // Rutas restringidas a admin
   const soloAdmin = [
     '/dashboard/licencias',
-    '/dashboard/usuarios'
+    '/dashboard/usuarios',
+    '/dashboard/log' // 👈 agregamos aquí la vista de logs
   ]
 
   if (soloAdmin.includes(to.path.toLowerCase()) && rol !== 'admin') {

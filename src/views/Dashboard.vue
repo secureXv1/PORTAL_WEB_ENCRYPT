@@ -39,22 +39,23 @@ export default {
     username() {
       return localStorage.getItem('username') || 'usuario'
     },
-    menu() {
-      const baseMenu = [
-        { view: 'inicio', label: 'Inicio', icon: '🏠' },
-        { view: 'tuneles', label: 'Túneles', icon: '🛰️' },
-        { view: 'multimedia', label: 'Archivos', icon: '🗂️' },
-        { view: 'clientes', label: 'Clientes', icon: '👥' },
-        { view: 'banco_pss', label: 'Banco pss', icon: '🔐' },
-        { view: 'configuracion', label: 'Configuración', icon: '⚙️' }
-      ]
-      const adminExtras = [
-        { view: 'licencias', label: 'Licencias', icon: '📄' },
-        { view: 'usuarios', label: 'Usuarios', icon: '👤' }
-      ]
-      return this.rol === 'admin' ? [...baseMenu, ...adminExtras] : baseMenu
-    }
-  }, // 👈 ESTA COMA ES NECESARIA
+          menu() {
+        const baseMenu = [
+          { view: 'inicio', label: 'Inicio', icon: '🏠' },
+          { view: 'tuneles', label: 'Túneles', icon: '🛰️' },
+          { view: 'multimedia', label: 'Archivos', icon: '🗂️' },
+          { view: 'clientes', label: 'Clientes', icon: '👥' },
+          { view: 'banco_pss', label: 'Banco pss', icon: '🔐' },
+          { view: 'configuracion', label: 'Configuración', icon: '⚙️' }
+        ]
+        const adminExtras = [
+          { view: 'licencias', label: 'Licencias', icon: '📄' },
+          { view: 'usuarios', label: 'Usuarios', icon: '👤' },
+          { view: 'log', label: 'Logs', icon: '🧾' }
+        ]
+        return this.rol === 'admin' ? [...baseMenu, ...adminExtras] : baseMenu
+      }
+  }, 
   methods: {
     async logout() {
       const username = localStorage.getItem('username')
