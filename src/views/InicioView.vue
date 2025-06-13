@@ -191,7 +191,7 @@ methods: {
         return
     }
 
-    this.archivosFiltrados = this.archivos.filter(a => new Date(a.fecha_subida) >= desde)
+    this.archivosFiltrados = this.archivos.filter(a => new Date(a.uploaded_at) >= desde)
   },
   aplicarRangoPersonalizado() {
     if (!this.fechaInicio || !this.fechaFin) {
@@ -204,7 +204,7 @@ methods: {
     hasta.setHours(23, 59, 59, 999)
 
     this.archivosFiltrados = this.archivos.filter(a => {
-      const fecha = new Date(a.fecha_subida)
+      const fecha = new Date(a.uploaded_at)
       return fecha >= desde && fecha <= hasta
     })
 
