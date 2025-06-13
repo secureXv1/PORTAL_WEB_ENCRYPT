@@ -2,13 +2,44 @@
   <div class="usuarios-container">
     <h2>👤 Gestión de Usuarios</h2>
 
-    <button class="crear-btn">➕ Crear nuevo usuario</button>
+    <button class="crear-btn" @click="mostrarFormulario = true">➕ Crear nuevo usuario</button>
+
+                      <!-- MODAL de creación de usuario -->
+              <div v-if="mostrarFormulario" class="modal-overlay">
+                <div class="modal">
+                  <h3>➕ Crear nuevo usuario</h3>
+
+                  <label>👤 Usuario</label>
+                  <input v-model="nuevoUsuario.username" type="text" placeholder="Nombre de usuario" />
+
+                  <label>🔒 Contraseña</label>
+                  <input v-model="nuevoUsuario.password" type="password" placeholder="Contraseña" />
+
+                  <label>✅ Confirmar contraseña</label>
+                  <input v-model="nuevoUsuario.confirmar" type="password" placeholder="Repetir contraseña" />
+
+                  <label>🎯 Rol</label>
+                  <select v-model="nuevoUsuario.rol">
+                    <option value="admin">Admin</option>
+                    <option value="consulta">Consulta</option>
+                  </select>
+
+                  <div class="modal-error" v-if="error">{{ error }}</div>
+
+                  <div class="modal-actions">
+                    <button @click="crearUsuario">Crear</button>
+                    <button @click="mostrarFormulario = false">Cancelar</button>
+                  </div>
+                </div>
+              </div>
+
+
+
 
     <!-- Resumen -->
     <div class="resumen">
       <div class="card admin">Admins: <strong>{{ contarPorRol('admin') }}</strong></div>
       <div class="card consulta">Consulta: <strong>{{ contarPorRol('consulta') }}</strong></div>
-      <div class="card proveedor">Proveedor: <strong>{{ contarPorRol('proveedor') }}</strong></div>
       <div class="card">Total: <strong>{{ usuarios.length }}</strong></div>
     </div>
 
@@ -40,7 +71,15 @@ export default {
   name: 'UsuariosView',
   data() {
     return {
-      usuarios: []
+      usuarios: [],
+      mostrarFormulario: false,
+      error: '',
+      nuevoUsuario: {
+        username: '',
+        password: '',
+        confirmar: '',
+        rol: 'consulta'
+      }
     }
   },
   methods: {
@@ -74,14 +113,49 @@ export default {
     },
     cancelarUsuario(usuario) {
       console.log('Cancelar usuario:', usuario.nombre)
+    },
+    async crearUsuario() {
+      this.error = ''
+
+      const { username, password, confirmar, rol } = this.nuevoUsuario
+
+      if (!username || !password || !confirmar) {
+        this.error = 'Todos los campos son obligatorios.'
+        return
+      }
+
+      if (password !== confirmar) {
+        this.error = 'Las contraseñas no coinciden.'
+        return
+      }
+
+      try {
+        const res = await axios.post('http://symbolsaps.ddns.net:8000/api/auth/register', {
+          username,
+          password,
+          rol
+        })
+
+        if (res.data.success) {
+          alert('✅ Usuario creado')
+          this.mostrarFormulario = false
+          this.nuevoUsuario = { username: '', password: '', confirmar: '', rol: 'consulta' }
+          this.cargarUsuarios()
+        } else {
+          this.error = res.data.error || 'Ocurrió un error.'
+        }
+      } catch (err) {
+        console.error('❌ Error al crear usuario:', err)
+        this.error = 'No se pudo crear el usuario.'
+      }
     }
   },
   mounted() {
     this.cargarUsuarios()
   }
 }
-
 </script>
+
 
 
 <style scoped>
@@ -120,9 +194,7 @@ export default {
 .card.consulta {
   background-color: #3498db;
 }
-.card.proveedor {
-  background-color: #e67e22;
-}
+
 
 .usuarios-lista {
   display: flex;
@@ -144,9 +216,6 @@ export default {
 .usuario-card.consulta {
   border-left: 6px solid #3498db;
 }
-.usuario-card.proveedor {
-  border-left: 6px solid #e67e22;
-}
 
 .info h4 {
   margin: 0;
@@ -163,9 +232,6 @@ export default {
 }
 .rol .consulta {
   background-color: #3498db;
-}
-.rol .proveedor {
-  background-color: #e67e22;
 }
 
 .rol, .fecha {
@@ -208,4 +274,62 @@ export default {
 .menu li:hover {
   background-color: #2c3e50;
 }
+
+.modal-overlay {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background-color: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modal {
+  background: #2c3e50;
+  padding: 20px 30px;
+  border-radius: 8px;
+  color: white;
+  width: 350px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.modal input, .modal select {
+  padding: 8px;
+  font-size: 14px;
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 15px;
+}
+
+.modal-error {
+  color: #ff6666;
+  font-size: 13px;
+  margin-top: 5px;
+  text-align: left;
+}
+
+.modal-actions button {
+  padding: 8px 14px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+.modal-actions button:first-child {
+  background-color: #1abc9c;
+  color: white;
+}
+.modal-actions button:last-child {
+  background-color: #7f8c8d;
+  color: white;
+}
+
+
+
+
 </style>
