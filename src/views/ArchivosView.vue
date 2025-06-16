@@ -76,19 +76,18 @@
         <tr v-for="(archivo, index) in archivosFiltrados" :key="archivo.id">
           <td>{{ index + 1 }}</td>
           <td>
-            <a
-              :href="`http://symbolsaps.ddns.net:8000/api/files/${archivo.id}/download?username=${username}`"
-              target="_blank"
-              class="archivo-link"
-            >
+                <a
+                  :href="`http://symbolsaps.ddns.net:8000/api/files/${archivo.id}/download?username=${username}`"
+                  target="_blank"
+                  class="archivo-link"
+                >
+                  <img :src="obtenerIcono(archivo.filename)" class="icono-archivo" alt="icono" />
+                  <span class="nombre-archivo">{{ limpiarNombreArchivo(archivo.filename) }}</span>
+                </a>
+              </td>
+          <td>{{ formatearFecha(archivo.uploaded_at) }}</td>
 
-
-
-              <img :src="obtenerIcono(archivo.filename)" class="icono-archivo" alt="icono" />
-              <span class="nombre-archivo">{{ archivo.filename }}</span>
-            </a>
-          </td>
-          <td>{{ archivo.uploaded_at }}</td>
+          
           <td>{{ archivo.tunnel_name || archivo.tunnel_id }}</td>
           <td>{{ archivo.sender_alias }}</td>
           <td>{{ archivo.client_uuid }}</td>
@@ -194,7 +193,18 @@ export default {
         this.filtros.tuneles = []
         this.filtros.alias = []
         this.filtros.clientes = []
+      },
+
+      limpiarNombreArchivo(nombre) {
+        const partes = nombre.split('_')
+        return partes.length >= 3 ? partes.slice(2).join('_') : nombre
+      },
+      formatearFecha(ms) {
+        const fecha = new Date(ms)
+        return fecha.toLocaleString('es-CO', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })
       }
+
+
     }
 
 }
