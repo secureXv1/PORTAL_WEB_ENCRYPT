@@ -163,53 +163,54 @@ methods: {
     })
   },
   setRango(rango) {
-    this.rangoSeleccionado = rango
-    this.mostrarFiltro = false
+  this.rangoSeleccionado = rango
+  this.mostrarFiltro = false
 
-    const ahora = new Date()
-    let desde = new Date()
+  const ahora = new Date()
+  let desde = new Date()
 
-    switch (rango) {
-      case 'hoy':
-        desde.setHours(0, 0, 0, 0)
-        this.etiquetaRango = 'Hoy'
-        break
-      case '2dias':
-        desde.setDate(ahora.getDate() - 2)
-        this.etiquetaRango = 'Últimos 2 días'
-        break
-      case 'semana':
-        desde.setDate(ahora.getDate() - 7)
-        this.etiquetaRango = 'Última semana'
-        break
-      case 'mes':
-        desde.setMonth(ahora.getMonth() - 1)
-        this.etiquetaRango = 'Último mes'
-        break
-      case 'personalizado':
-        this.etiquetaRango = 'Seleccione fechas'
-        return
-    }
-
-    this.archivosFiltrados = this.archivos.filter(a => new Date(a.uploaded_at) >= desde)
-  },
-  aplicarRangoPersonalizado() {
-    if (!this.fechaInicio || !this.fechaFin) {
-      this.etiquetaRango = 'Fechas incompletas'
+  switch (rango) {
+    case 'hoy':
+      desde.setHours(0, 0, 0, 0)
+      this.etiquetaRango = 'Hoy'
+      break
+    case '2dias':
+      desde.setDate(ahora.getDate() - 2)
+      this.etiquetaRango = 'Últimos 2 días'
+      break
+    case 'semana':
+      desde.setDate(ahora.getDate() - 7)
+      this.etiquetaRango = 'Última semana'
+      break
+    case 'mes':
+      desde.setMonth(ahora.getMonth() - 1)
+      this.etiquetaRango = 'Último mes'
+      break
+    case 'personalizado':
+      this.etiquetaRango = 'Seleccione fechas'
       return
-    }
+  }
 
-    const desde = new Date(this.fechaInicio)
-    const hasta = new Date(this.fechaFin)
-    hasta.setHours(23, 59, 59, 999)
+  this.archivosFiltrados = this.archivos.filter(a => Number(a.uploaded_at) >= desde.getTime())
+},
 
-    this.archivosFiltrados = this.archivos.filter(a => {
-      const fecha = new Date(a.uploaded_at)
-      return fecha >= desde && fecha <= hasta
-    })
+aplicarRangoPersonalizado() {
+  if (!this.fechaInicio || !this.fechaFin) {
+    this.etiquetaRango = 'Fechas incompletas'
+    return
+  }
 
-    this.etiquetaRango = `Del ${this.formatoFecha(this.fechaInicio)} al ${this.formatoFecha(this.fechaFin)}`
-  },
+  const desde = new Date(this.fechaInicio)
+  const hasta = new Date(this.fechaFin)
+  hasta.setHours(23, 59, 59, 999)
+
+  this.archivosFiltrados = this.archivos.filter(a => {
+    const ms = Number(a.uploaded_at)
+    return ms >= desde.getTime() && ms <= hasta.getTime()
+  })
+
+  this.etiquetaRango = `Del ${this.formatoFecha(this.fechaInicio)} al ${this.formatoFecha(this.fechaFin)}`
+},
 
   setRangoClientes(rango) {
   this.rangoSeleccionadoClientes = rango
@@ -269,10 +270,15 @@ mounted() {
   
 
   axios.get('http://symbolsaps.ddns.net:8000/api/files')
-    .then(res => {
-      this.archivos = res.data
-      this.setRango('mes')
+  .then(res => {
+    // ✅ Filtra archivos con fechas válidas (entre 2001 y mañana)
+    this.archivos = res.data.filter(a => {
+      const ms = Number(a.uploaded_at)
+      return ms > 1000000000000 && ms < Date.now() + 86400000
     })
+    this.setRango('mes')
+  })
+
 
   axios.get('http://symbolsaps.ddns.net:8000/api/tunnels')
     .then(res => this.tuneles = res.data)
