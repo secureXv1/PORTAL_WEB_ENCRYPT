@@ -18,12 +18,8 @@
             </ul>
           </div>
         </div>
-
-        <!-- Valor y rango -->
         <p>{{ archivosFiltrados.length }}</p>
         <small>{{ etiquetaRango }}</small>
-
-        <!-- Fechas personalizadas -->
         <div v-if="rangoSeleccionado === 'personalizado'" class="rango-personalizado">
           <label>Desde: <input type="date" v-model="fechaInicio" /></label>
           <label>Hasta: <input type="date" v-model="fechaFin" /></label>
@@ -32,48 +28,43 @@
       </div>
 
       <div class="card relative">
-  <div class="card-header">
-    <h4>Cantidad Clientes</h4>
-    <div class="dropdown">
-      <i class="fa-solid fa-filter" @click="mostrarFiltroClientes = !mostrarFiltroClientes"></i>
-      <ul v-if="mostrarFiltroClientes" class="dropdown-menu">
-        <li @click="setRangoClientes('hoy')">Hoy</li>
-        <li @click="setRangoClientes('2dias')">Últimos 2 días</li>
-        <li @click="setRangoClientes('semana')">Última semana</li>
-        <li @click="setRangoClientes('mes')">Último mes</li>
-        <li @click="setRangoClientes('personalizado')">Personalizado</li>
-      </ul>
-    </div>
-  </div>
+        <div class="card-header">
+          <h4>Cantidad Clientes</h4>
+          <div class="dropdown">
+            <i class="fa-solid fa-filter" @click="mostrarFiltroClientes = !mostrarFiltroClientes"></i>
+            <ul v-if="mostrarFiltroClientes" class="dropdown-menu">
+              <li @click="setRangoClientes('hoy')">Hoy</li>
+              <li @click="setRangoClientes('2dias')">Últimos 2 días</li>
+              <li @click="setRangoClientes('semana')">Última semana</li>
+              <li @click="setRangoClientes('mes')">Último mes</li>
+              <li @click="setRangoClientes('personalizado')">Personalizado</li>
+            </ul>
+          </div>
+        </div>
+        <p>{{ usuariosFiltrados.length }}</p>
+        <small>{{ etiquetaRangoClientes }}</small>
+        <div v-if="rangoSeleccionadoClientes === 'personalizado'" class="rango-personalizado">
+          <label>Desde: <input type="date" v-model="fechaInicioClientes" /></label>
+          <label>Hasta: <input type="date" v-model="fechaFinClientes" /></label>
+          <button @click="aplicarRangoPersonalizadoClientes">Aplicar</button>
+        </div>
+      </div>
 
-  <p>{{ usuariosFiltrados.length }}</p>
-  <small>{{ etiquetaRangoClientes }}</small>
-
-  <!-- Fechas personalizadas -->
-  <div v-if="rangoSeleccionadoClientes === 'personalizado'" class="rango-personalizado">
-    <label>Desde: <input type="date" v-model="fechaInicioClientes" /></label>
-    <label>Hasta: <input type="date" v-model="fechaFinClientes" /></label>
-    <button @click="aplicarRangoPersonalizadoClientes">Aplicar</button>
-  </div>
-</div>
-
-      <div class="card"><h4>Licencias por vencer próximamente</h4><p>1</p><small>LIC-ABC123 15jun26</small></div>
+      <div class="card">
+        <h4>Licencias por vencer próximamente</h4>
+        <p>1</p>
+        <small>LIC-ABC123 15jun26</small>
+      </div>
     </div>
 
     <div class="grid">
-      <!-- 📈 Gráfico -->
-      <div class="card wide">
-        <div class="card-header">
-                      <h3>📊 Cantidad de archivos</h3>
-                      
-                    </div>
-
-                    
-
-        <Bar :data="chartData" :options="chartOptions" />
+          <div class="card wide">
+      <div class="card-header">
+        <h3>📊 Cantidad de archivos</h3>
       </div>
+      <Bar :data="chartData" :options="chartOptions" />
+    </div>
 
-      <!-- 👥 Clientes online -->
       <div class="card scrollable-card">
         <h3><i class="fa-solid fa-user-group"></i> Clientes online ({{ usuarios.length }})</h3>
         <ul class="usuarios scrollable-list">
@@ -87,7 +78,6 @@
         </ul>
       </div>
 
-      <!-- 🌐 Túneles online -->
       <div class="card scrollable-card">
         <h3><i class="fa-solid fa-network-wired"></i> Túneles online ({{ tuneles.length }})</h3>
         <ul class="usuarios scrollable-list">
@@ -101,8 +91,15 @@
         </ul>
       </div>
     </div>
+
+    <!-- 🗺️ Mapa de clientes -->
+          <div class="card wide" style="margin-top: 20px; height: 400px;">
+        <MapaClientes :clientes="usuarios" />
+      </div>
+
   </div>
 </template>
+
 
 
 
@@ -114,11 +111,12 @@ import {
   BarElement, CategoryScale, LinearScale
 } from 'chart.js'
 import axios from 'axios'
+import MapaClientes from '@/components/MapaClientes.vue'
 
 ChartJS.register(Title, Tooltip, Legend, BarElement, CategoryScale, LinearScale)
 
 export default {
-  components: { Bar },
+  components: { Bar, MapaClientes },
   data() {
   return {
     usuarios: [],
@@ -315,35 +313,64 @@ cambiarFiltroGrafico(filtro) {
 
 
 },
-mounted() {
-  
+        mounted() {
+          // 🟢 Mostrar datos dummy de clientes antes de cargar desde backend
+          this.usuarios = [
+            {
+              hostname: 'PC-Bogotá',
+              lat: 4.65,
+              lon: -74.1,
+              sistema_operativo: 'Windows 10',
+              creado_en: '2025-06-15T12:00:00'
+            },
+            {
+              hostname: 'PC-Medellín',
+              lat: 6.24,
+              lon: -75.58,
+              sistema_operativo: 'Ubuntu 22.04',
+              creado_en: '2025-06-13T08:30:00'
+            },
+            {
+              hostname: 'PC-Cali',
+              lat: 3.45,
+              lon: -76.53,
+              sistema_operativo: 'Windows 11',
+              creado_en: '2025-06-12T16:20:00'
+            },
+            {
+              hostname: 'PC-Barranquilla',
+              lat: 10.96,
+              lon: -74.8,
+              sistema_operativo: 'Debian 11',
+              creado_en: '2025-06-10T10:10:00'
+            }
+          ]
+          this.setRangoClientes('mes') // Filtro inicial con dummy
 
-  axios.get('http://symbolsaps.ddns.net:8000/api/files')
-  .then(res => {
-    // ✅ Filtra archivos con fechas válidas (entre 2001 y mañana)
-    this.archivos = res.data.filter(a => {
-      const ms = Number(a.uploaded_at)
-      return ms > 1000000000000 && ms < Date.now() + 86400000
-    })
-    this.setRango('mes')
-  })
+          // 🔵 Cargar archivos reales
+          axios.get('http://symbolsaps.ddns.net:8000/api/files')
+            .then(res => {
+              this.archivos = res.data.filter(a => {
+                const ms = Number(a.uploaded_at)
+                return ms > 1000000000000 && ms < Date.now() + 86400000
+              })
+              this.setRango('mes')
+            })
 
+          // 🔵 Cargar túneles
+          axios.get('http://symbolsaps.ddns.net:8000/api/tunnels')
+            .then(res => this.tuneles = res.data)
 
-  axios.get('http://symbolsaps.ddns.net:8000/api/tunnels')
-    .then(res => this.tuneles = res.data)
+          this.filtrarGraficoArchivos()
 
-  this.filtrarGraficoArchivos()
+          // 🔵 Cargar clientes reales y actualizar
+          axios.get('http://symbolsaps.ddns.net:8000/api/clientes')
+            .then(res => {
+              this.usuarios = res.data
+              this.setRangoClientes('mes')
+            })
+        }
 
-
-    axios.get('http://symbolsaps.ddns.net:8000/api/clientes')
-  .then(res => {
-    this.usuarios = res.data
-    this.setRangoClientes('mes') // filtro inicial
-  })
-
-
-
-}
 
 }
 </script>
