@@ -96,15 +96,22 @@
   <div class="panel-contenedor">
     <!-- Participantes -->
     <h4>&nbsp;&nbsp;👥 Participantes ({{ participantes.length }})</h4>
-    <div class="participantes">
-      <ul>
-        <li v-for="p in participantes" :key="p.client_uuid">
-          <strong>{{ p.aliases.join(', ') }}</strong><br />
-          <small>{{ p.hostname }}</small><br />
-          <code>{{ p.client_uuid }}</code>
-        </li>
-      </ul>
-    </div>
+          <div class="participantes">
+              <ul>
+                <li v-for="p in participantes" :key="p.client_uuid" class="participante">
+                  <span class="emoji-usuario">👤</span>
+                  <div class="info">
+                    <div class="alias">{{ p.aliases[0] }}</div>
+                    <div class="uuid">{{ p.client_uuid }}</div>
+                  </div>
+                  <div class="tooltip">
+                    <strong>Hostname:</strong> {{ p.hostname }}<br />
+                    <strong>SO:</strong> {{ p.sistema_operativo }}
+                  </div>
+                </li>
+              </ul>
+            </div>
+
 
               <!-- Archivos -->
           <h4>&nbsp;&nbsp;📁 Archivos ({{ archivos.length }})</h4>
@@ -678,6 +685,70 @@ export default {
 .filtros-fecha-vertical button:hover {
   background-color: #16a085;
 }
+
+.participante {
+  position: relative;
+  display: flex;
+  align-items: center;
+  padding: 8px 10px;
+  background: #1e1e1e;
+  border-radius: 8px;
+  margin-bottom: 8px;
+  transition: background 0.2s ease;
+}
+
+.participante:hover {
+  background: #2c2c2c;
+}
+
+.emoji-usuario {
+  font-size: 24px;
+  margin-right: 10px;
+}
+
+.info .alias {
+  font-weight: bold;
+  color: #ffffff;
+}
+
+.info .uuid {
+  font-size: 12px;
+  color: #aaa;
+}
+
+.tooltip {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  background: #333;
+  color: white;
+  padding: 6px 10px;
+  font-size: 12px;
+  border-radius: 6px;
+  white-space: nowrap;
+  margin-top: 6px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease;
+  z-index: 10;
+}
+
+.participante:hover .tooltip {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.participante-item {
+  position: relative;
+  padding: 8px 10px;
+  background: #1e1e1e;
+  border-radius: 6px;
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
 
 
 
