@@ -165,151 +165,163 @@ export default {
     this.cargarTuneles()
   },
 
-  methods: {
-    cargarTuneles() {
-      axios.get('http://symbolsaps.ddns.net:8000/api/tunnels')
-        .then(res => {
-          this.tuneles = res.data
-          if (res.data.length) {
-            this.seleccionarTunel(res.data[0])
-          }
-        })
-    },
+              methods: {
+              cargarTuneles() {
+                axios.get('http://symbolsaps.ddns.net:8000/api/tunnels')
+                  .then(res => {
+                    this.tuneles = res.data
+                    if (res.data.length) {
+                      this.seleccionarTunel(res.data[0])
+                    }
+                  })
+              },
 
-    seleccionarTunel(tunel) {
-      this.tunelActivo = tunel
-      this.aplicarFiltroFecha()
+              seleccionarTunel(tunel) {
+                this.tunelActivo = tunel
+                this.aplicarFiltroFecha()
+              },
 
-      axios.get('http://symbolsaps.ddns.net:8000/api/files')
-        .then(res => {
-          this.archivos = res.data.filter(f => f.tunnel_id == tunel.id)
-        })
+              aplicarFiltroFecha() {
+                if (!this.tunelActivo) return
 
-      axios.get(`http://symbolsaps.ddns.net:8000/api/tunnels/${tunel.id}/participantes`)
-        .then(res => {
-          this.participantes = res.data
-        })
-        .catch(err => {
-          console.error('❌ Error cargando participantes:', err)
-          this.participantes = []
-        })
-    },
+                const hoy = new Date()
+                let desde = null
+                let hasta = new Date().toISOString().split("T")[0] + "T23:59:59"
 
-    aplicarFiltroFecha() {
-      if (!this.tunelActivo) return
+                if (this.filtroFecha === 'hoy') {
+                  desde = new Date().toISOString().split("T")[0] + "T00:00:00"
+                } else if (this.filtroFecha === '2dias') {
+                  desde = new Date(hoy.setDate(hoy.getDate() - 1)).toISOString().split("T")[0] + "T00:00:00"
+                } else if (this.filtroFecha === 'semana') {
+                  desde = new Date(hoy.setDate(hoy.getDate() - 6)).toISOString().split("T")[0] + "T00:00:00"
+                } else if (this.filtroFecha === 'mes') {
+                  desde = new Date(hoy.setDate(hoy.getDate() - 29)).toISOString().split("T")[0] + "T00:00:00"
+                } else if (this.filtroFecha === 'personalizado') {
+                  desde = this.fechaDesde ? this.fechaDesde + "T00:00:00" : null
+                  hasta = this.fechaHasta ? this.fechaHasta + "T23:59:59" : null
+                }
 
-      const hoy = new Date()
-      let desde = null
-      let hasta = new Date().toISOString().split("T")[0] + "T23:59:59"
+                const desdeMs = desde ? new Date(desde).getTime() : null
+                const hastaMs = hasta ? new Date(hasta).getTime() : null
 
-      if (this.filtroFecha === 'hoy') {
-        desde = new Date().toISOString().split("T")[0] + "T00:00:00"
-      } else if (this.filtroFecha === '2dias') {
-        desde = new Date(hoy.setDate(hoy.getDate() - 1)).toISOString().split("T")[0] + "T00:00:00"
-      } else if (this.filtroFecha === 'semana') {
-        desde = new Date(hoy.setDate(hoy.getDate() - 6)).toISOString().split("T")[0] + "T00:00:00"
-      } else if (this.filtroFecha === 'mes') {
-        desde = new Date(hoy.setDate(hoy.getDate() - 29)).toISOString().split("T")[0] + "T00:00:00"
-      } else if (this.filtroFecha === 'personalizado') {
-        desde = this.fechaDesde ? this.fechaDesde + "T00:00:00" : null
-        hasta = this.fechaHasta ? this.fechaHasta + "T23:59:59" : null
-      }
+                const params = {
+                  tunnel_id: this.tunelActivo.id,
+                  desde: desdeMs,
+                  hasta: hastaMs
+                }
 
-      const params = {
-        tunnel_id: this.tunelActivo.id,
-        desde: desde ? new Date(desde).getTime() : null,
-        hasta: hasta ? new Date(hasta).getTime() : null
-      }
+                // 1. Cargar mensajes
+                axios.get('http://symbolsaps.ddns.net:8000/api/messages', { params })
+                  .then(res => {
+                    this.mensajes = res.data
+                    this.scrollAlFinal()
 
-      axios.get('http://symbolsaps.ddns.net:8000/api/messages', { params })
-        .then(res => {
-          this.mensajes = res.data
-          this.scrollAlFinal()
-        })
-    },
+                    // 2. Extraer participantes únicos desde los mensajes
+                    const mapa = new Map()
+                    res.data.forEach(msg => {
+                      if (!mapa.has(msg.client_uuid)) {
+                        mapa.set(msg.client_uuid, {
+                          client_uuid: msg.client_uuid,
+                          aliases: [msg.alias],
+                          hostname: msg.hostname || '(sin hostname)'
+                        })
+                      } else {
+                        const p = mapa.get(msg.client_uuid)
+                        if (!p.aliases.includes(msg.alias)) {
+                          p.aliases.push(msg.alias)
+                        }
+                      }
+                    })
+                    this.participantes = Array.from(mapa.values())
+                  })
 
-    descargarChat(formato) {
-      if (!this.tunelActivo) return
+                // 3. Filtrar archivos por fecha
+                axios.get('http://symbolsaps.ddns.net:8000/api/files')
+                  .then(res => {
+                    const archivosT = res.data.filter(f => f.tunnel_id == this.tunelActivo.id)
+                    this.archivos = archivosT.filter(f => {
+                      const t = Number(f.uploaded_at)
+                      return (!desdeMs || t >= desdeMs) && (!hastaMs || t <= hastaMs)
+                    })
+                  })
+              },
 
-      const params = new URLSearchParams({ formato })
+              descargarChat(formato) {
+                if (!this.tunelActivo) return
 
-      if (this.filtroFecha === 'personalizado') {
-        if (this.fechaDesde) params.append('desde', new Date(this.fechaDesde + 'T00:00:00').getTime())
-        if (this.fechaHasta) params.append('hasta', new Date(this.fechaHasta + 'T23:59:59').getTime())
-      } else {
-        const hoy = new Date()
-        let desde = ''
-        let hasta = new Date().toISOString().split("T")[0]
-        if (this.filtroFecha === 'hoy') {
-          desde = hasta
-        } else if (this.filtroFecha === '2dias') {
-          desde = new Date(hoy.setDate(hoy.getDate() - 1)).toISOString().split("T")[0]
-        } else if (this.filtroFecha === 'semana') {
-          desde = new Date(hoy.setDate(hoy.getDate() - 6)).toISOString().split("T")[0]
-        } else if (this.filtroFecha === 'mes') {
-          desde = new Date(hoy.setDate(hoy.getDate() - 29)).toISOString().split("T")[0]
-        }
-        if (desde) {
-          const desdeMs = new Date(desde + 'T00:00:00').getTime()
-          const hastaMs = new Date(hasta + 'T23:59:59').getTime()
-          params.append('desde', desdeMs)
-          params.append('hasta', hastaMs)
-        }
-      }
+                const params = new URLSearchParams({ formato })
 
-      const username = localStorage.getItem('username')
-      params.append('username', username)
-      const url = `http://symbolsaps.ddns.net:8000/api/tunnels/${this.tunelActivo.id}/export?${params.toString()}`
+                if (this.filtroFecha === 'personalizado') {
+                  if (this.fechaDesde) params.append('desde', new Date(this.fechaDesde + 'T00:00:00').getTime())
+                  if (this.fechaHasta) params.append('hasta', new Date(this.fechaHasta + 'T23:59:59').getTime())
+                } else {
+                  const hoy = new Date()
+                  let desde = ''
+                  let hasta = new Date().toISOString().split("T")[0]
+                  if (this.filtroFecha === 'hoy') {
+                    desde = hasta
+                  } else if (this.filtroFecha === '2dias') {
+                    desde = new Date(hoy.setDate(hoy.getDate() - 1)).toISOString().split("T")[0]
+                  } else if (this.filtroFecha === 'semana') {
+                    desde = new Date(hoy.setDate(hoy.getDate() - 6)).toISOString().split("T")[0]
+                  } else if (this.filtroFecha === 'mes') {
+                    desde = new Date(hoy.setDate(hoy.getDate() - 29)).toISOString().split("T")[0]
+                  }
+                  if (desde) {
+                    const desdeMs = new Date(desde + 'T00:00:00').getTime()
+                    const hastaMs = new Date(hasta + 'T23:59:59').getTime()
+                    params.append('desde', desdeMs)
+                    params.append('hasta', hastaMs)
+                  }
+                }
 
-      window.open(url, "_blank")
-      this.mostrarOpciones = false
-    },
+                const username = localStorage.getItem('username')
+                params.append('username', username)
+                const url = `http://symbolsaps.ddns.net:8000/api/tunnels/${this.tunelActivo.id}/export?${params.toString()}`
 
-    formatearFecha(fecha) {
-      return new Date(fecha).toLocaleString()
-    },
+                window.open(url, "_blank")
+                this.mostrarOpciones = false
+              },
 
-    getColorClass(alias) {
-      const colores = ['color-1', 'color-2', 'color-3', 'color-4', 'color-5']
-      const hash = alias.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0)
-      return colores[hash % colores.length]
-    },
+              formatearFecha(fecha) {
+                return new Date(fecha).toLocaleString()
+              },
 
-    scrollAlFinal() {
-      this.$nextTick(() => {
-        const contenedor = this.$refs.contenedorMensajes
-        if (contenedor) {
-          contenedor.scrollTop = contenedor.scrollHeight
-        }
-      })
-    },
+              getColorClass(alias) {
+                const colores = ['color-1', 'color-2', 'color-3', 'color-4', 'color-5']
+                const hash = alias.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0)
+                return colores[hash % colores.length]
+              },
 
-    esArchivo(url) {
-      return typeof url === 'string' && url.includes('/uploads/') && url.match(/\.\w+$/)
-    },
+              scrollAlFinal() {
+                this.$nextTick(() => {
+                  const contenedor = this.$refs.contenedorMensajes
+                  if (contenedor) {
+                    contenedor.scrollTop = contenedor.scrollHeight
+                  }
+                })
+              },
 
-    extraerNombreArchivo(url) {
-      return decodeURIComponent(url.split('/').pop())
-    },
+              esArchivo(url) {
+                return typeof url === 'string' && url.includes('/uploads/') && url.match(/\.\w+$/)
+              },
 
-    obtenerIconoPorExtension(filename) {
-      const ext = filename.split('.').pop().toLowerCase()
-      const conocidas = ['pdf', 'docx', 'xlsx', 'png', 'jpg', 'jpeg', 'gif', 'mp3', 'mp4', 'json', 'zip', 'txt']
-      return `/assets/icons/${conocidas.includes(ext) ? ext : 'default'}.png`
-    },
+              extraerNombreArchivo(url) {
+                return decodeURIComponent(url.split('/').pop())
+              },
+
+              obtenerIconoPorExtension(filename) {
+                const ext = filename.split('.').pop().toLowerCase()
+                const conocidas = ['pdf', 'docx', 'xlsx', 'png', 'jpg', 'jpeg', 'gif', 'mp3', 'mp4', 'json', 'zip', 'txt']
+                return `/assets/icons/${conocidas.includes(ext) ? ext : 'default'}.png`
+              },
 
               limpiarNombreArchivo(nombre) {
-            const partes = nombre.split('_')
-            if (partes.length >= 3) {
-              return partes.slice(2).join('_')  // Une desde el tercer fragmento en adelante
+                const partes = nombre.split('_')
+                return partes.length >= 3 ? partes.slice(2).join('_') : nombre
+              }
             }
-            return nombre  // Por si no cumple el patrón esperado
-          }
 
-
-
-
-  }
 }
 </script>
 
