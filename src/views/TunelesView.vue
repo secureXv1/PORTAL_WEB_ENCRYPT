@@ -57,21 +57,38 @@
   </div>
 
   <!-- ✅ Lista de mensajes -->
-  <div class="mensajes" ref="contenedorMensajes">
-    <div
-      v-for="msg in mensajes"
-      :key="msg.id"
-      class="mensaje-wrapper externo"
-    >
-      <div class="alias">
-        {{ msg.alias }} • {{ formatearFecha(msg.enviado_en) }}
-      </div>
+            <div class="mensajes" ref="contenedorMensajes">
+            <div
+              v-for="msg in mensajes"
+              :key="msg.id"
+              class="mensaje-wrapper externo"
+            >
+              <div class="alias">
+                {{ msg.alias }} • {{ formatearFecha(msg.enviado_en) }}
+              </div>
 
-      <div :class="['burbuja', 'externo', getColorClass(msg.alias)]">
-        {{ msg.contenido }}
-      </div>
-    </div>
-  </div>
+              <div :class="['burbuja', 'externo', getColorClass(msg.alias)]">
+                <template v-if="esArchivo(msg.contenido)">
+                  <a
+                    :href="msg.contenido"
+                    target="_blank"
+                    class="archivo-link"
+                  >
+                    <img
+                      :src="obtenerIconoPorExtension(extraerNombreArchivo(msg.contenido))"
+                      alt="icon"
+                      style="width: 20px; vertical-align: middle; margin-right: 8px;"
+                    />
+                    <span>{{ limpiarNombreArchivo(extraerNombreArchivo(msg.contenido)) }}</span>
+                  </a>
+                </template>
+
+                <template v-else>
+                  {{ msg.contenido }}
+                </template>
+              </div>
+            </div>
+          </div>
 </main>
 
 <!-- Participantes y Archivos -->
@@ -89,22 +106,27 @@
       </ul>
     </div>
 
-    <!-- Archivos -->
-    <h4>&nbsp;&nbsp;📁 Archivos ({{ archivos.length }})</h4>
-    <div class="archivos-lista">
+              <!-- Archivos -->
+          <h4>&nbsp;&nbsp;📁 Archivos ({{ archivos.length }})</h4>
+          <div class="archivos-lista">
             <ul>
-        <li v-for="file in archivos" :key="file.id">
-          <a
-            :href="`http://symbolsaps.ddns.net:8000/api/files/${file.id}/download?username=${username}`"
-            target="_blank"
-            class="archivo-link"
-          >
-            {{ file.filename }}
-          </a>
-        </li>
-      </ul>
+              <li v-for="file in archivos" :key="file.id">
+                <a
+                  :href="`http://symbolsaps.ddns.net:8000/api/files/${file.id}/download?username=${username}`"
+                  target="_blank"
+                  class="archivo-link"
+                >
+                  <img
+                    :src="obtenerIconoPorExtension(limpiarNombreArchivo(file.filename))"
+                    alt="icon"
+                    style="width: 20px; vertical-align: middle; margin-right: 6px;"
+                  />
+                  {{ limpiarNombreArchivo(file.filename) }}
+                </a>
 
-    </div>
+              </li>
+            </ul>
+          </div>
   </div>
 </aside>
 
@@ -118,159 +140,179 @@ import axios from 'axios'
 
 export default {
   data() {
-  return {
-    filtroFecha: "hoy",
-    fechaDesde: "",
-    fechaHasta: "",
-    mensajes: [],
-    tunelActivo: null,
-    tuneles: [],
-    archivos: [],
-    participantes: [],
-    busqueda: '',
-    mostrarOpciones: false,
-    username: localStorage.getItem("username") || ""
-  }
-}
-,
+    return {
+      filtroFecha: "hoy",
+      fechaDesde: "",
+      fechaHasta: "",
+      mensajes: [],
+      tunelActivo: null,
+      tuneles: [],
+      archivos: [],
+      participantes: [],
+      busqueda: '',
+      mostrarOpciones: false,
+      username: localStorage.getItem("username") || ""
+    }
+  },
+
   computed: {
     tunelesFiltrados() {
       return this.tuneles.filter(t => t.name.toLowerCase().includes(this.busqueda.toLowerCase()))
     }
   },
+
   mounted() {
     this.cargarTuneles()
   },
- methods: {
+
+  methods: {
     cargarTuneles() {
-    axios.get('http://symbolsaps.ddns.net:8000/api/tunnels')
-      .then(res => {
-        this.tuneles = res.data
-        if (res.data.length) {
-          this.seleccionarTunel(res.data[0])
-        }
-      })
+      axios.get('http://symbolsaps.ddns.net:8000/api/tunnels')
+        .then(res => {
+          this.tuneles = res.data
+          if (res.data.length) {
+            this.seleccionarTunel(res.data[0])
+          }
+        })
     },
+
     seleccionarTunel(tunel) {
-    this.tunelActivo = tunel
-    this.aplicarFiltroFecha()
+      this.tunelActivo = tunel
+      this.aplicarFiltroFecha()
 
-    axios.get('http://symbolsaps.ddns.net:8000/api/files')
-      .then(res => {
-        this.archivos = res.data.filter(f => f.tunnel_id == tunel.id)
-      })
+      axios.get('http://symbolsaps.ddns.net:8000/api/files')
+        .then(res => {
+          this.archivos = res.data.filter(f => f.tunnel_id == tunel.id)
+        })
 
-    axios.get(`http://symbolsaps.ddns.net:8000/api/tunnels/${tunel.id}/participantes`)
-      .then(res => {
-        this.participantes = res.data
-      })
-      .catch(err => {
-        console.error('❌ Error cargando participantes:', err)
-        this.participantes = []
-      })
+      axios.get(`http://symbolsaps.ddns.net:8000/api/tunnels/${tunel.id}/participantes`)
+        .then(res => {
+          this.participantes = res.data
+        })
+        .catch(err => {
+          console.error('❌ Error cargando participantes:', err)
+          this.participantes = []
+        })
     },
 
     aplicarFiltroFecha() {
-  if (!this.tunelActivo) return;
+      if (!this.tunelActivo) return
 
-  const hoy = new Date();
-  let desde = null;
-  let hasta = new Date().toISOString().split("T")[0] + "T23:59:59";
-
-  if (this.filtroFecha === 'hoy') {
-    desde = new Date().toISOString().split("T")[0] + "T00:00:00";
-  } else if (this.filtroFecha === '2dias') {
-    desde = new Date(hoy.setDate(hoy.getDate() - 1)).toISOString().split("T")[0] + "T00:00:00";
-  } else if (this.filtroFecha === 'semana') {
-    desde = new Date(hoy.setDate(hoy.getDate() - 6)).toISOString().split("T")[0] + "T00:00:00";
-  } else if (this.filtroFecha === 'mes') {
-    desde = new Date(hoy.setDate(hoy.getDate() - 29)).toISOString().split("T")[0] + "T00:00:00";
-  } else if (this.filtroFecha === 'personalizado') {
-    desde = this.fechaDesde ? this.fechaDesde + "T00:00:00" : null;
-    hasta = this.fechaHasta ? this.fechaHasta + "T23:59:59" : null;
-  }
-
-  const params = {
-    tunnel_id: this.tunelActivo.id,
-    desde: desde ? new Date(desde).getTime() : null,
-    hasta: hasta ? new Date(hasta).getTime() : null
-  };
-
-  axios.get('http://symbolsaps.ddns.net:8000/api/messages', { params })
-    .then(res => {
-      this.mensajes = res.data;
-      this.scrollAlFinal();
-    });
-  },
-
-   descargarChat(formato) {
-    if (!this.tunelActivo) return;
-
-    const params = new URLSearchParams({ formato })
-
-    // Añadir filtros si existen
-    if (this.filtroFecha === 'personalizado') {
-    if (this.fechaDesde) params.append('desde', new Date(this.fechaDesde + 'T00:00:00').getTime())
-    if (this.fechaHasta) params.append('hasta', new Date(this.fechaHasta + 'T23:59:59').getTime())
-
-    } else {
       const hoy = new Date()
-      let desde = ''
-      let hasta = new Date().toISOString().split("T")[0]
+      let desde = null
+      let hasta = new Date().toISOString().split("T")[0] + "T23:59:59"
+
       if (this.filtroFecha === 'hoy') {
-        desde = hasta
+        desde = new Date().toISOString().split("T")[0] + "T00:00:00"
       } else if (this.filtroFecha === '2dias') {
-        desde = new Date(hoy.setDate(hoy.getDate() - 1)).toISOString().split("T")[0]
+        desde = new Date(hoy.setDate(hoy.getDate() - 1)).toISOString().split("T")[0] + "T00:00:00"
       } else if (this.filtroFecha === 'semana') {
-        desde = new Date(hoy.setDate(hoy.getDate() - 6)).toISOString().split("T")[0]
+        desde = new Date(hoy.setDate(hoy.getDate() - 6)).toISOString().split("T")[0] + "T00:00:00"
       } else if (this.filtroFecha === 'mes') {
-        desde = new Date(hoy.setDate(hoy.getDate() - 29)).toISOString().split("T")[0]
-      }
-      if (desde) {
-      const desdeMs = new Date(desde + 'T00:00:00').getTime()
-      const hastaMs = new Date(hasta + 'T23:59:59').getTime()
-      params.append('desde', desdeMs)
-      params.append('hasta', hastaMs)
+        desde = new Date(hoy.setDate(hoy.getDate() - 29)).toISOString().split("T")[0] + "T00:00:00"
+      } else if (this.filtroFecha === 'personalizado') {
+        desde = this.fechaDesde ? this.fechaDesde + "T00:00:00" : null
+        hasta = this.fechaHasta ? this.fechaHasta + "T23:59:59" : null
       }
 
-    }
+      const params = {
+        tunnel_id: this.tunelActivo.id,
+        desde: desde ? new Date(desde).getTime() : null,
+        hasta: hasta ? new Date(hasta).getTime() : null
+      }
 
-    const username = localStorage.getItem('username')
-    params.append('username', username)
-    const url = `http://symbolsaps.ddns.net:8000/api/tunnels/${this.tunelActivo.id}/export?${params.toString()}`
+      axios.get('http://symbolsaps.ddns.net:8000/api/messages', { params })
+        .then(res => {
+          this.mensajes = res.data
+          this.scrollAlFinal()
+        })
+    },
 
-    window.open(url, "_blank")
-    this.mostrarOpciones = false
-  },
+    descargarChat(formato) {
+      if (!this.tunelActivo) return
+
+      const params = new URLSearchParams({ formato })
+
+      if (this.filtroFecha === 'personalizado') {
+        if (this.fechaDesde) params.append('desde', new Date(this.fechaDesde + 'T00:00:00').getTime())
+        if (this.fechaHasta) params.append('hasta', new Date(this.fechaHasta + 'T23:59:59').getTime())
+      } else {
+        const hoy = new Date()
+        let desde = ''
+        let hasta = new Date().toISOString().split("T")[0]
+        if (this.filtroFecha === 'hoy') {
+          desde = hasta
+        } else if (this.filtroFecha === '2dias') {
+          desde = new Date(hoy.setDate(hoy.getDate() - 1)).toISOString().split("T")[0]
+        } else if (this.filtroFecha === 'semana') {
+          desde = new Date(hoy.setDate(hoy.getDate() - 6)).toISOString().split("T")[0]
+        } else if (this.filtroFecha === 'mes') {
+          desde = new Date(hoy.setDate(hoy.getDate() - 29)).toISOString().split("T")[0]
+        }
+        if (desde) {
+          const desdeMs = new Date(desde + 'T00:00:00').getTime()
+          const hastaMs = new Date(hasta + 'T23:59:59').getTime()
+          params.append('desde', desdeMs)
+          params.append('hasta', hastaMs)
+        }
+      }
+
+      const username = localStorage.getItem('username')
+      params.append('username', username)
+      const url = `http://symbolsaps.ddns.net:8000/api/tunnels/${this.tunelActivo.id}/export?${params.toString()}`
+
+      window.open(url, "_blank")
+      this.mostrarOpciones = false
+    },
+
+    formatearFecha(fecha) {
+      return new Date(fecha).toLocaleString()
+    },
+
+    getColorClass(alias) {
+      const colores = ['color-1', 'color-2', 'color-3', 'color-4', 'color-5']
+      const hash = alias.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0)
+      return colores[hash % colores.length]
+    },
+
+    scrollAlFinal() {
+      this.$nextTick(() => {
+        const contenedor = this.$refs.contenedorMensajes
+        if (contenedor) {
+          contenedor.scrollTop = contenedor.scrollHeight
+        }
+      })
+    },
+
+    esArchivo(url) {
+      return typeof url === 'string' && url.includes('/uploads/') && url.match(/\.\w+$/)
+    },
+
+    extraerNombreArchivo(url) {
+      return decodeURIComponent(url.split('/').pop())
+    },
+
+    obtenerIconoPorExtension(filename) {
+      const ext = filename.split('.').pop().toLowerCase()
+      const conocidas = ['pdf', 'docx', 'xlsx', 'png', 'jpg', 'jpeg', 'gif', 'mp3', 'mp4', 'json', 'zip', 'txt']
+      return `/assets/icons/${conocidas.includes(ext) ? ext : 'default'}.png`
+    },
+
+              limpiarNombreArchivo(nombre) {
+            const partes = nombre.split('_')
+            if (partes.length >= 3) {
+              return partes.slice(2).join('_')  // Une desde el tercer fragmento en adelante
+            }
+            return nombre  // Por si no cumple el patrón esperado
+          }
 
 
-  formatearFecha(fecha) {
-  return new Date(fecha).toLocaleString()
-  },
 
 
-  getColorClass(alias) {
-    const colores = ['color-1', 'color-2', 'color-3', 'color-4', 'color-5']
-    const hash = alias.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0)
-    return colores[hash % colores.length]
-  },
-
-  scrollAlFinal() {
-  this.$nextTick(() => {
-    const contenedor = this.$refs.contenedorMensajes
-    if (contenedor) {
-      contenedor.scrollTop = contenedor.scrollHeight
-    }
-  })
-},
-
-
-  
-
-}
-
+  }
 }
 </script>
+
 
 <style scoped>
 .tuneles-chat {
@@ -369,29 +411,17 @@ export default {
 .archivos {
   width: 250px;
   background: #2c3e50;
-  padding: 0;
   display: flex;
   flex-direction: column;
   overflow: hidden;
 }
 
-.archivos ul {
-  list-style: none;
-  padding: 0;
-}
-
-.archivos li {
-  background: #3b5164;
-  padding: 8px;
-  margin-bottom: 6px;
-  border-radius: 4px;
-}
 
 .participantes {
-  max-height: 400px; /* altura aprox. para 4 elementos */
+  flex: 1;
+  max-height: 45%;
   overflow-y: auto;
-  padding: 20px;
-  padding-bottom: 10px;
+  padding: 0 20px 10px 20px;
   border-bottom: 1px solid #444;
 }
 
@@ -404,30 +434,67 @@ export default {
 }
 
 .participantes ul,
-.archivos-lista ul {
+.archivos-lista ul,
+.archivos ul {
   list-style: none;
   padding: 0;
   margin: 0;
 }
 
+
 .participantes li,
-.archivos-lista li {
+.archivos-lista li,
+.archivos li {
   background: #3b5164;
   padding: 8px;
   margin-bottom: 6px;
   border-radius: 4px;
+  font-size: 14px;
+  word-break: break-word;
 }
+
+
+.archivo-link {
+  color: #ecf0f1;
+  text-decoration: none;
+  display: inline-block;
+  max-width: 100%;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.archivo-link:hover {
+  color: #1abc9c;
+}
+
 
 .panel-contenedor {
   display: flex;
   flex-direction: column;
   height: 100%;
+  padding-top: 10px;
+  gap: 10px;
 }
 
 .archivos-lista {
-  padding: 20px;
+  flex: 1;
+  max-height: 55%;
+  overflow-y: auto;
+  padding: 0 20px 20px 20px;
   border-top: 1px solid #444;
 }
+
+.archivos h4,
+.participantes h4 {
+  padding-left: 10px;
+  font-size: 15px;
+  margin-top: 8px;
+  margin-bottom: 8px;
+  border-bottom: 1px solid #444;
+}
+
+
 
 .dropdown {
   position: relative;
