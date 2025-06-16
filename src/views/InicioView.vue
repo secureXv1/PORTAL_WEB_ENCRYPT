@@ -63,7 +63,13 @@
     <div class="grid">
       <!-- 📈 Gráfico -->
       <div class="card wide">
-        <h3>📊 Cantidad de archivos</h3>
+        <div class="card-header">
+                      <h3>📊 Cantidad de archivos</h3>
+                      
+                    </div>
+
+                    
+
         <Bar :data="chartData" :options="chartOptions" />
       </div>
 
@@ -130,6 +136,13 @@ export default {
     etiquetaRangoClientes: 'Último mes',
     fechaInicioClientes: '',
     fechaFinClientes: '',
+    filtroGrafico: 'mes',
+    fechaInicioGrafico: '',
+    fechaFinGrafico: '',
+    mostrarFiltroGrafico: false,
+
+
+
 
 
 
@@ -163,53 +176,56 @@ methods: {
     })
   },
   setRango(rango) {
-  this.rangoSeleccionado = rango
-  this.mostrarFiltro = false
+  this.rangoSeleccionado = rango;
+  this.mostrarFiltro = false;
 
-  const ahora = new Date()
-  let desde = new Date()
+  const ahora = new Date();
+  let desde = new Date();
 
   switch (rango) {
     case 'hoy':
-      desde.setHours(0, 0, 0, 0)
-      this.etiquetaRango = 'Hoy'
-      break
+      desde.setHours(0, 0, 0, 0);
+      this.etiquetaRango = 'Hoy';
+      break;
     case '2dias':
-      desde.setDate(ahora.getDate() - 2)
-      this.etiquetaRango = 'Últimos 2 días'
-      break
+      desde.setDate(ahora.getDate() - 1);
+      this.etiquetaRango = 'Últimos 2 días';
+      break;
     case 'semana':
-      desde.setDate(ahora.getDate() - 7)
-      this.etiquetaRango = 'Última semana'
-      break
+      desde.setDate(ahora.getDate() - 6);
+      this.etiquetaRango = 'Última semana';
+      break;
     case 'mes':
-      desde.setMonth(ahora.getMonth() - 1)
-      this.etiquetaRango = 'Último mes'
-      break
+      desde.setMonth(ahora.getMonth() - 1);
+      this.etiquetaRango = 'Último mes';
+      break;
     case 'personalizado':
-      this.etiquetaRango = 'Seleccione fechas'
-      return
+      this.etiquetaRango = 'Seleccione fechas';
+      return;
   }
 
-  this.archivosFiltrados = this.archivos.filter(a => Number(a.uploaded_at) >= desde.getTime())
+  this.archivosFiltrados = this.archivos.filter(a => Number(a.uploaded_at) >= desde.getTime());
+  this.filtrarGraficoArchivos();
 },
+
 
 aplicarRangoPersonalizado() {
   if (!this.fechaInicio || !this.fechaFin) {
-    this.etiquetaRango = 'Fechas incompletas'
-    return
+    this.etiquetaRango = 'Fechas incompletas';
+    return;
   }
 
-  const desde = new Date(this.fechaInicio)
-  const hasta = new Date(this.fechaFin)
-  hasta.setHours(23, 59, 59, 999)
+  const desde = new Date(this.fechaInicio);
+  const hasta = new Date(this.fechaFin);
+  hasta.setHours(23, 59, 59, 999);
 
   this.archivosFiltrados = this.archivos.filter(a => {
-    const ms = Number(a.uploaded_at)
-    return ms >= desde.getTime() && ms <= hasta.getTime()
-  })
+    const ms = Number(a.uploaded_at);
+    return ms >= desde.getTime() && ms <= hasta.getTime();
+  });
 
-  this.etiquetaRango = `Del ${this.formatoFecha(this.fechaInicio)} al ${this.formatoFecha(this.fechaFin)}`
+  this.etiquetaRango = `Del ${this.formatoFecha(this.fechaInicio)} al ${this.formatoFecha(this.fechaFin)}`;
+  this.filtrarGraficoArchivos();
 },
 
   setRangoClientes(rango) {
@@ -260,7 +276,40 @@ aplicarRangoPersonalizadoClientes() {
   })
 
   this.etiquetaRangoClientes = `Del ${this.formatoFecha(this.fechaInicioClientes)} al ${this.formatoFecha(this.fechaFinClientes)}`
+},
+
+
+        filtrarGraficoArchivos() {
+          const conteoPorFecha = {};
+
+          this.archivosFiltrados.forEach(a => {
+            const ms = Number(a.uploaded_at);
+            const fecha = new Date(ms).toISOString().split("T")[0]; // YYYY-MM-DD
+            conteoPorFecha[fecha] = (conteoPorFecha[fecha] || 0) + 1;
+          });
+
+          const fechasOrdenadas = Object.keys(conteoPorFecha).sort();
+
+          this.chartData = {
+            labels: fechasOrdenadas,
+            datasets: [{
+              label: 'Archivos subidos',
+              backgroundColor: '#42b983',
+              data: fechasOrdenadas.map(f => conteoPorFecha[f])
+            }]
+          };
+        },
+
+
+
+
+cambiarFiltroGrafico(filtro) {
+  this.filtroGrafico = filtro
+  this.mostrarFiltroGrafico = false
+  if (filtro !== 'personalizado') this.filtrarGraficoArchivos()
 }
+
+
 
 
 
@@ -283,11 +332,7 @@ mounted() {
   axios.get('http://symbolsaps.ddns.net:8000/api/tunnels')
     .then(res => this.tuneles = res.data)
 
-  axios.get('http://symbolsaps.ddns.net:8000/api/estadisticas/archivos-por-dia')
-    .then(res => {
-      this.chartData.labels = res.data.map(r => r.fecha)
-      this.chartData.datasets[0].data = res.data.map(r => r.total)
-    })
+  this.filtrarGraficoArchivos()
 
 
     axios.get('http://symbolsaps.ddns.net:8000/api/clientes')
