@@ -13,6 +13,8 @@
         >
           <strong>{{ tunel.name }}</strong>
           <p class="fecha">{{ formatearFecha(tunel.created_at) }}</p>
+          
+
         </li>
       </ul>
     </aside>
@@ -22,7 +24,9 @@
   <div class="chat-header">
     <div class="header-left">
       <h3>Tunel {{ tunelActivo?.name || '...' }}</h3>
-      <p v-if="tunelActivo">Creado el {{ formatearFecha(tunelActivo.created_at) }}</p>
+      <p v-if="tunelActivo"> 🗓️ ​Creado el {{ formatearFecha(tunelActivo.created_at) }}</p>
+      <p v-if="tunelActivo"> 👤 Creado por : {{ tunelActivo.created_by || 'Desconocido' }}</p>
+
     </div>
 
     <div class="header-right">
@@ -77,7 +81,7 @@
                     <img
                       :src="obtenerIconoPorExtension(extraerNombreArchivo(msg.contenido))"
                       alt="icon"
-                      style="width: 20px; vertical-align: middle; margin-right: 8px;"
+                      style="width: 40px; height: 40px; vertical-align: middle; margin-right: 10px;"
                     />
                     <span>{{ limpiarNombreArchivo(extraerNombreArchivo(msg.contenido)) }}</span>
                   </a>
@@ -114,7 +118,10 @@
 
 
               <!-- Archivos -->
-          <h4>&nbsp;&nbsp;📁 Archivos ({{ archivos.length }})</h4>
+          <h4>&nbsp;&nbsp;📁 Archivos ({{ archivos.length }}) &nbsp &nbsp &nbsp &nbsp &nbsp <button class="boton-principal" @click="descargarTodosLosArchivos">⬇️ </button> </h4>
+          
+        
+
           <div class="archivos-lista">
             <ul>
               <li v-for="file in archivos" :key="file.id">
@@ -331,15 +338,61 @@ export default {
                   },
 
                   obtenerIconoPorExtension(filename) {
-                    const ext = filename.split('.').pop().toLowerCase()
-                    const conocidas = ['pdf', 'docx', 'xlsx', 'png', 'jpg', 'jpeg', 'gif', 'mp3', 'mp4', 'json', 'zip', 'txt']
-                    return `/assets/icons/${conocidas.includes(ext) ? ext : 'default'}.png`
+                  const ext = filename.split('.').pop().toLowerCase()
+
+                  // ✅ Unificar extensiones similares
+                  if (['jpg', 'jpeg'].includes(ext)) return '/assets/icons/png.png'
+                  if (ext === 'json') return '/assets/icons/default.svg'
+
+                  // ✅ Lista de extensiones con íconos específicos (en formato PNG)
+                  const conocidas = ['pdf', 'docx', 'xlsx', 'png', 'gif', 'mp3', 'mp4', 'zip', 'txt']
+
+                  // ✅ Retorna SVG por defecto si no está en la lista
+                  return conocidas.includes(ext)
+                    ? `/assets/icons/${ext}.png`
+                    : `/assets/icons/default.svg`
                   },
+
 
                   limpiarNombreArchivo(nombre) {
                     const partes = nombre.split('_')
                     return partes.length >= 3 ? partes.slice(2).join('_') : nombre
-                  }
+                  },
+
+                  descargarTodosLosArchivos() {
+                      if (!this.tunelActivo) return;
+
+                      const hoy = new Date()
+                      let desde = '', hasta = new Date().toISOString().split("T")[0]
+
+                      const params = new URLSearchParams()
+
+                      if (this.filtroFecha === 'personalizado') {
+                        if (this.fechaDesde) params.append('desde', new Date(this.fechaDesde + 'T00:00:00').getTime())
+                        if (this.fechaHasta) params.append('hasta', new Date(this.fechaHasta + 'T23:59:59').getTime())
+                      } else {
+                        if (this.filtroFecha === 'hoy') {
+                          desde = hasta
+                        } else if (this.filtroFecha === '2dias') {
+                          desde = new Date(hoy.setDate(hoy.getDate() - 1)).toISOString().split("T")[0]
+                        } else if (this.filtroFecha === 'semana') {
+                          desde = new Date(hoy.setDate(hoy.getDate() - 6)).toISOString().split("T")[0]
+                        } else if (this.filtroFecha === 'mes') {
+                          desde = new Date(hoy.setDate(hoy.getDate() - 29)).toISOString().split("T")[0]
+                        }
+
+                        if (desde) {
+                          params.append('desde', new Date(desde + 'T00:00:00').getTime())
+                          params.append('hasta', new Date(hasta + 'T23:59:59').getTime())
+                        }
+                      }
+
+                      params.append('username', this.username)
+
+                      const url = `http://symbolsaps.ddns.net:8000/api/tunnels/${this.tunelActivo.id}/download-zip?${params.toString()}`
+                      window.open(url, "_blank")
+                    }
+
                 }
 
 
