@@ -11,13 +11,7 @@ export default {
   props: {
     clientes: {
       type: Array,
-      required: false,
-      default: () => ([
-        { hostname: 'PC-Bogotá', lat: 4.65, lon: -74.1, sistema_operativo: 'Windows 10' },
-        { hostname: 'PC-Medellín', lat: 6.24, lon: -75.58, sistema_operativo: 'Ubuntu 22.04' },
-        { hostname: 'PC-Cali', lat: 3.45, lon: -76.53, sistema_operativo: 'Windows 11' },
-        { hostname: 'PC-Barranquilla', lat: 10.96, lon: -74.8, sistema_operativo: 'Debian 11' }
-      ])
+      required: true
     }
   },
   data() {
@@ -28,7 +22,15 @@ export default {
   },
   mounted() {
     this.inicializarMapa()
-    this.mostrarClientes(this.clientes)
+    this.actualizarClientes(this.clientes)
+  },
+  watch: {
+    clientes: {
+      handler(nuevosClientes) {
+        this.actualizarClientes(nuevosClientes)
+      },
+      deep: true
+    }
   },
   methods: {
     inicializarMapa() {
@@ -37,14 +39,29 @@ export default {
         attribution: '&copy; OpenStreetMap contributors'
       }).addTo(this.map)
     },
-    mostrarClientes(clientes) {
+    actualizarClientes(clientes) {
+      this.limpiarMarcadores()
+      const bounds = []
+
       clientes.forEach(c => {
-        if (c.lat && c.lon) {
-          const marker = L.marker([c.lat, c.lon]).addTo(this.map)
+        const lat = parseFloat(c.lat || c.latitud)
+        const lon = parseFloat(c.lon || c.longitud)
+
+        if (!isNaN(lat) && !isNaN(lon)) {
+          const marker = L.marker([lat, lon]).addTo(this.map)
           marker.bindPopup(`<strong>${c.hostname}</strong><br>${c.sistema_operativo}`)
           this.markers.push(marker)
+          bounds.push([lat, lon])
         }
       })
+
+      if (bounds.length > 0) {
+        this.map.fitBounds(bounds, { padding: [20, 20] })
+      }
+    },
+    limpiarMarcadores() {
+      this.markers.forEach(m => this.map.removeLayer(m))
+      this.markers = []
     }
   }
 }

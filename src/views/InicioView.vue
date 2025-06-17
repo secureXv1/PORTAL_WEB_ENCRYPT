@@ -94,7 +94,10 @@
 
     <!-- 🗺️ Mapa de clientes -->
           <div class="card wide" style="margin-top: 20px; height: 400px;">
-        <MapaClientes :clientes="usuarios" />
+        <MapaClientes :clientes="usuarios.filter(c => (c.latitud || c.lat) && (c.longitud || c.lon))" />
+
+
+
       </div>
 
   </div>
