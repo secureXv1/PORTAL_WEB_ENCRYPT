@@ -138,6 +138,7 @@ export default {
     fechaInicioGrafico: '',
     fechaFinGrafico: '',
     mostrarFiltroGrafico: false,
+    clientesTotales: [],
 
 
 
@@ -255,7 +256,7 @@ aplicarRangoPersonalizado() {
       return
   }
 
-  this.usuariosFiltrados = this.usuarios.filter(u => new Date(u.creado_en) >= desde)
+  this.usuariosFiltrados = this.clientesTotales.filter(u => new Date(u.creado_en) >= desde)
 },
 
 aplicarRangoPersonalizadoClientes() {
@@ -268,7 +269,7 @@ aplicarRangoPersonalizadoClientes() {
   const hasta = new Date(this.fechaFinClientes)
   hasta.setHours(23, 59, 59, 999)
 
-  this.usuariosFiltrados = this.usuarios.filter(u => {
+  this.usuariosFiltrados = this.clientesTotales.filter(u => {
     const fecha = new Date(u.creado_en)
     return fecha >= desde && fecha <= hasta
   })
@@ -364,11 +365,23 @@ cambiarFiltroGrafico(filtro) {
           this.filtrarGraficoArchivos()
 
           // 🔵 Cargar clientes reales y actualizar
-          axios.get('http://symbolsaps.ddns.net:8000/api/clientes')
+          axios.get('http://symbolsaps.ddns.net:8000/api/clientes_info_all')
             .then(res => {
               this.usuarios = res.data
+                .map(c => ({
+                  ...c,
+                  estado: c.desconectado_en == null ? 'online' : 'offline'
+                }))
+                .filter(c => c.estado === 'online') // 🔹 Mostrar solo en línea
+            })
+
+            axios.get('http://symbolsaps.ddns.net:8000/api/clientes')
+            .then(res => {
+              this.clientesTotales = res.data
               this.setRangoClientes('mes')
             })
+
+
         }
 
 
