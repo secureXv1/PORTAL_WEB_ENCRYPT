@@ -1,6 +1,6 @@
 <template>
   <div class="clientes-container">
-    <h2>📊 Clientes registrados</h2>
+    <h2>📊 Clientes registrados ({{ clientesFiltrados.length }})</h2>
 
     <!-- Buscador -->
     <input type="text" v-model="filtro" placeholder="🔍 Buscar por hostname, IP o SO..." class="buscador" />
@@ -20,21 +20,26 @@
     <table>
       <thead>
         <tr>
-          <th>🖥 Hostname</th>
-          <th>📡 IPs</th>
+          <th>💻 Hostname</th>
+          <th>🛁 IPs</th>
           <th>🌐 Red / Ciudad</th>
-          <th>💻 SO</th>
+          <th>🖥 SO</th>
           <th>📶 Estado</th>
-          <th>📅 Registro</th>
-          <th>🧾 Historial</th>
+          <th>🗓 Registro</th>
+          <th>🧭 Coordenada</th>
+          <th>🌎​ Historial</th>
         </tr>
       </thead>
       <tbody>
         <tr v-for="cliente in clientesPaginados" :key="cliente.uuid" :class="{ online: cliente.estado === 'online' }">
-          <td>{{ cliente.hostname }}</td>
           <td>
-            <div>Local: {{ cliente.ip_local }}</div>
-            <div>Pública: {{ cliente.ip_publica }}</div>
+            <strong>{{ cliente.hostname }}</strong>
+            <br />
+            <small class="uuid-text">{{ cliente.uuid }}</small>
+          </td>
+          <td>
+            <div>Local: {{ cliente.ip_local || '---' }}</div>
+            <div>Pública: {{ cliente.ip_publica || '---' }}</div>
           </td>
           <td>
             <div>{{ cliente.red_wifi || 'No disponible' }}</div>
@@ -42,12 +47,22 @@
           </td>
           <td><span class="badge so">{{ cliente.sistema_operativo || 'N/A' }}</span></td>
           <td>
-            <span class="badge online" v-if="cliente.estado === 'online'">🟢 En línea</span>
-            <span class="badge offline" v-else>🔴 Desconectado</span>
+            <span class="badge online" v-if="cliente.estado === 'online'">🟢 Online</span>
+            <span class="badge offline" v-else>🔴 Offline</span>
+            <br v-if="cliente.estado === 'offline'" />
+            <small v-if="cliente.estado === 'offline'">{{ formatearFechaLocal(cliente.desconectado_en) }}</small>
           </td>
-          <td>{{ formatearFechaLocal(cliente.ultima_info_registrada) }}</td>
+          <td>{{ formatearFechaLocal(cliente.creado_en) }}</td>
           <td>
-            <button class="ver-historial" @click="verHistorial(cliente.uuid)">📂 Ver</button>
+            <div v-if="cliente.latitud && cliente.longitud">
+              <a :href="generarLinkMaps(cliente.latitud, cliente.longitud)" target="_blank">
+                {{ cliente.latitud.toFixed(4) }}, {{ cliente.longitud.toFixed(4) }}
+              </a>
+            </div>
+            <div v-else>---</div>
+          </td>
+          <td>
+            <button class="ver-historial" @click="verHistorial(cliente.uuid)">🌎​ Ver</button>
           </td>
         </tr>
       </tbody>
@@ -63,7 +78,7 @@
     <!-- Modal Historial -->
     <div class="modal" v-if="historialVisible">
       <div class="modal-content">
-        <h3>📜 Historial de {{ clienteSeleccionado }}</h3>
+        <h3> 🌎​ Historial de {{ clienteSeleccionado }}</h3>
         <table>
           <thead>
             <tr>
@@ -79,7 +94,12 @@
               <td>{{ item.ip_local }}</td>
               <td>{{ item.ip_publica }}</td>
               <td>{{ item.red_wifi }}</td>
-              <td>{{ item.ciudad }}</td>
+              <td>
+                <a v-if="item.latitud && item.longitud" :href="generarLinkMaps(item.latitud, item.longitud)" target="_blank">
+                  {{ item.latitud.toFixed(4) }}, {{ item.longitud.toFixed(4) }}
+                </a>
+                <span v-else>---</span>
+              </td>
               <td>{{ formatearFechaLocal(item.registrado_en) }}</td>
             </tr>
           </tbody>
@@ -132,21 +152,19 @@ export default {
       .then(res => {
         this.clientes = res.data.map(c => ({
           ...c,
-          estado: this.calcularEstado(c.conectado_en, c.desconectado_en)
+          estado: this.calcularEstado(c.desconectado_en)
         }))
       })
       .catch(err => console.error("❌ Error cargando clientes:", err))
   },
   methods: {
     formatearFechaLocal(ms) {
-      if (!ms) return '---'
+      if (!ms) return '🟢 En línea';
       const fecha = new Date(Number(ms));
-      return fecha.toLocaleString()
+      return fecha.toLocaleString();
     },
-    calcularEstado(conectado, desconectado) {
-      if (!conectado) return 'offline'
-      if (!desconectado || conectado > desconectado) return 'online'
-      return 'offline'
+    calcularEstado(desconectado) {
+      return desconectado === null || desconectado === undefined ? 'online' : 'offline';
     },
     verHistorial(uuid) {
       this.clienteSeleccionado = uuid
@@ -156,6 +174,9 @@ export default {
           this.historialVisible = true
         })
         .catch(err => console.error("❌ Error cargando historial:", err))
+    },
+    generarLinkMaps(lat, lng) {
+      return `https://www.google.com/maps?q=${lat},${lng}`
     }
   }
 }
@@ -183,6 +204,7 @@ th {
 td, th {
   padding: 10px;
   border-bottom: 1px solid #444;
+  vertical-align: top;
 }
 
 input.buscador {
@@ -255,5 +277,11 @@ tr.online {
   width: 90%;
   max-width: 900px;
   color: white;
+}
+
+.uuid-text {
+  color: #bbb;
+  font-size: 0.8em;
+  word-break: break-all;
 }
 </style>
