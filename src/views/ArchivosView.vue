@@ -161,8 +161,17 @@ export default {
     methods: {
       obtenerIcono(filename) {
         const ext = filename.split('.').pop().toLowerCase()
-        const iconos = ['pdf', 'docx', 'xlsx', 'ppt', 'png', 'jpg', 'jpeg', 'gif', 'mp4', 'mp3', 'zip', 'rar', 'txt', 'json']
-        return `/assets/icons/${iconos.includes(ext) ? ext : 'default'}.png`
+
+        // Agrupar tipos similares
+        if (['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp'].includes(ext)) return '/assets/icons/png.png'
+        if (['json'].includes(ext)) return '/assets/icons/default.svg'
+
+        // Lista conocida (usa PNG)
+        const conocidos = ['pdf', 'docx', 'xlsx', 'ppt', 'mp3', 'mp4', 'zip', 'rar', 'txt']
+
+        return conocidos.includes(ext)
+          ? `/assets/icons/${ext}.png`
+          : `/assets/icons/default.svg`
       },
       ordenarPor(campo) {
         if (this.orden.campo === campo) {

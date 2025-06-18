@@ -58,12 +58,12 @@
     </div>
 
     <div class="grid">
-          <div class="card wide">
-      <div class="card-header">
-        <h3>📊 Cantidad de archivos</h3>
+      <div class="card wide">
+        <div class="card-header">
+          <h3>📊 Cantidad de archivos</h3>
+        </div>
+        <Bar :data="chartData" :options="chartOptions" />
       </div>
-      <Bar :data="chartData" :options="chartOptions" />
-    </div>
 
       <div class="card scrollable-card">
         <h3><i class="fa-solid fa-user-group"></i> Clientes online ({{ usuarios.length }})</h3>
@@ -93,18 +93,11 @@
     </div>
 
     <!-- 🗺️ Mapa de clientes -->
-          <div class="card wide" style="margin-top: 20px; height: 400px;">
-        <MapaClientes :clientes="usuarios.filter(c => (c.latitud || c.lat) && (c.longitud || c.lon))" />
-
-
-
-      </div>
-
+    <div class="card wide" style="margin-top: 20px; height: 400px;">
+      <MapaClientes :clientes="usuarios.filter(c => (c.latitud || c.lat) && (c.longitud || c.lon))" />
+    </div>
   </div>
 </template>
-
-
-
 
 <script>
 import { Bar } from 'vue-chartjs'
@@ -121,275 +114,158 @@ ChartJS.register(Title, Tooltip, Legend, BarElement, CategoryScale, LinearScale)
 export default {
   components: { Bar, MapaClientes },
   data() {
-  return {
-    usuarios: [],
-    archivos: [],
-    archivosFiltrados: [],
-    tuneles: [],
-    mostrarFiltro: false,
-    rangoSeleccionado: 'mes',
-    etiquetaRango: 'Último mes',
-    fechaInicio: '',
-    fechaFin: '',
-    usuariosFiltrados: [],
-    mostrarFiltroClientes: false,
-    rangoSeleccionadoClientes: 'mes',
-    etiquetaRangoClientes: 'Último mes',
-    fechaInicioClientes: '',
-    fechaFinClientes: '',
-    filtroGrafico: 'mes',
-    fechaInicioGrafico: '',
-    fechaFinGrafico: '',
-    mostrarFiltroGrafico: false,
-    clientesTotales: [],
-
-
-
-
-
-
-
-    chartData: {
-      labels: [],
-      datasets: [{
-        label: 'Archivos subidos',
-        backgroundColor: '#42b983',
-        data: []
-      }]
-    },
-    chartOptions: {
-      responsive: true,
-      plugins: {
-        legend: { display: false },
-        title: { display: false }
+    return {
+      usuarios: [],
+      archivos: [],
+      archivosFiltrados: [],
+      tuneles: [],
+      mostrarFiltro: false,
+      rangoSeleccionado: 'mes',
+      etiquetaRango: 'Último mes',
+      fechaInicio: '',
+      fechaFin: '',
+      usuariosFiltrados: [],
+      mostrarFiltroClientes: false,
+      rangoSeleccionadoClientes: 'mes',
+      etiquetaRangoClientes: 'Último mes',
+      fechaInicioClientes: '',
+      fechaFinClientes: '',
+      filtroGrafico: 'mes',
+      fechaInicioGrafico: '',
+      fechaFinGrafico: '',
+      mostrarFiltroGrafico: false,
+      clientesTotales: [],
+      chartData: {
+        labels: [],
+        datasets: [{
+          label: 'Archivos subidos',
+          backgroundColor: '#42b983',
+          data: []
+        }]
+      },
+      chartOptions: {
+        responsive: true,
+        plugins: {
+          legend: { display: false },
+          title: { display: false }
+        }
       }
     }
-  }
-},
-methods: {
-  formatearFecha(fecha) {
-    return new Date(fecha).toLocaleString()
   },
-  formatoFecha(fecha) {
-    return new Date(fecha).toLocaleDateString('es-CO', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric'
+  methods: {
+    formatearFecha(fecha) {
+      return new Date(fecha).toLocaleString()
+    },
+    formatoFecha(fecha) {
+      return new Date(fecha).toLocaleDateString('es-CO', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric'
+      })
+    },
+    setRango(rango) {
+      this.rangoSeleccionado = rango;
+      this.mostrarFiltro = false;
+      const ahora = new Date();
+      let desde = new Date();
+      switch (rango) {
+        case 'hoy': desde.setHours(0, 0, 0, 0); this.etiquetaRango = 'Hoy'; break
+        case '2dias': desde.setDate(ahora.getDate() - 1); this.etiquetaRango = 'Últimos 2 días'; break
+        case 'semana': desde.setDate(ahora.getDate() - 6); this.etiquetaRango = 'Última semana'; break
+        case 'mes': desde.setMonth(ahora.getMonth() - 1); this.etiquetaRango = 'Último mes'; break
+        case 'personalizado': this.etiquetaRango = 'Seleccione fechas'; return
+      }
+      this.archivosFiltrados = this.archivos.filter(a => Number(a.uploaded_at) >= desde.getTime())
+      this.filtrarGraficoArchivos()
+    },
+    aplicarRangoPersonalizado() {
+      if (!this.fechaInicio || !this.fechaFin) {
+        this.etiquetaRango = 'Fechas incompletas'; return
+      }
+      const desde = new Date(this.fechaInicio)
+      const hasta = new Date(this.fechaFin)
+      hasta.setHours(23, 59, 59, 999)
+      this.archivosFiltrados = this.archivos.filter(a => {
+        const ms = Number(a.uploaded_at)
+        return ms >= desde.getTime() && ms <= hasta.getTime()
+      })
+      this.etiquetaRango = `Del ${this.formatoFecha(this.fechaInicio)} al ${this.formatoFecha(this.fechaFin)}`
+      this.filtrarGraficoArchivos()
+    },
+    setRangoClientes(rango) {
+      this.rangoSeleccionadoClientes = rango
+      this.mostrarFiltroClientes = false
+      const ahora = new Date()
+      let desde = new Date()
+      switch (rango) {
+        case 'hoy': desde.setHours(0, 0, 0, 0); this.etiquetaRangoClientes = 'Hoy'; break
+        case '2dias': desde.setDate(ahora.getDate() - 2); this.etiquetaRangoClientes = 'Últimos 2 días'; break
+        case 'semana': desde.setDate(ahora.getDate() - 7); this.etiquetaRangoClientes = 'Última semana'; break
+        case 'mes': desde.setMonth(ahora.getMonth() - 1); this.etiquetaRangoClientes = 'Último mes'; break
+        case 'personalizado': this.etiquetaRangoClientes = 'Seleccione fechas'; return
+      }
+      this.usuariosFiltrados = this.clientesTotales.filter(u => new Date(u.creado_en) >= desde)
+    },
+    aplicarRangoPersonalizadoClientes() {
+      if (!this.fechaInicioClientes || !this.fechaFinClientes) {
+        this.etiquetaRangoClientes = 'Fechas incompletas'; return
+      }
+      const desde = new Date(this.fechaInicioClientes)
+      const hasta = new Date(this.fechaFinClientes)
+      hasta.setHours(23, 59, 59, 999)
+      this.usuariosFiltrados = this.clientesTotales.filter(u => {
+        const fecha = new Date(u.creado_en)
+        return fecha >= desde && fecha <= hasta
+      })
+      this.etiquetaRangoClientes = `Del ${this.formatoFecha(this.fechaInicioClientes)} al ${this.formatoFecha(this.fechaFinClientes)}`
+    },
+    filtrarGraficoArchivos() {
+      const conteoPorFecha = {}
+      this.archivosFiltrados.forEach(a => {
+        const ms = Number(a.uploaded_at)
+        const fecha = new Date(ms).toISOString().split("T")[0]
+        conteoPorFecha[fecha] = (conteoPorFecha[fecha] || 0) + 1
+      })
+      const fechasOrdenadas = Object.keys(conteoPorFecha).sort()
+      this.chartData = {
+        labels: fechasOrdenadas,
+        datasets: [{
+          label: 'Archivos subidos',
+          backgroundColor: '#42b983',
+          data: fechasOrdenadas.map(f => conteoPorFecha[f])
+        }]
+      }
+    },
+    cambiarFiltroGrafico(filtro) {
+      this.filtroGrafico = filtro
+      this.mostrarFiltroGrafico = false
+      if (filtro !== 'personalizado') this.filtrarGraficoArchivos()
+    }
+  },
+  mounted() {
+    axios.get('http://symbolsaps.ddns.net:8000/api/files').then(res => {
+      this.archivos = res.data.filter(a => {
+        const ms = Number(a.uploaded_at)
+        return ms > 1000000000000 && ms < Date.now() + 86400000
+      })
+      this.setRango('mes')
     })
-  },
-  setRango(rango) {
-  this.rangoSeleccionado = rango;
-  this.mostrarFiltro = false;
-
-  const ahora = new Date();
-  let desde = new Date();
-
-  switch (rango) {
-    case 'hoy':
-      desde.setHours(0, 0, 0, 0);
-      this.etiquetaRango = 'Hoy';
-      break;
-    case '2dias':
-      desde.setDate(ahora.getDate() - 1);
-      this.etiquetaRango = 'Últimos 2 días';
-      break;
-    case 'semana':
-      desde.setDate(ahora.getDate() - 6);
-      this.etiquetaRango = 'Última semana';
-      break;
-    case 'mes':
-      desde.setMonth(ahora.getMonth() - 1);
-      this.etiquetaRango = 'Último mes';
-      break;
-    case 'personalizado':
-      this.etiquetaRango = 'Seleccione fechas';
-      return;
+    axios.get('http://symbolsaps.ddns.net:8000/api/tunnels').then(res => this.tuneles = res.data)
+    axios.get('http://symbolsaps.ddns.net:8000/api/clientes_info_all')
+      .then(res => {
+        this.usuarios = res.data
+          .map(c => ({ ...c, estado: c.desconectado_en == null ? 'online' : 'offline' }))
+          .filter(c => c.estado === 'online')
+      })
+    axios.get('http://symbolsaps.ddns.net:8000/api/clientes')
+      .then(res => {
+        this.clientesTotales = res.data
+        this.setRangoClientes('mes')
+      })
   }
-
-  this.archivosFiltrados = this.archivos.filter(a => Number(a.uploaded_at) >= desde.getTime());
-  this.filtrarGraficoArchivos();
-},
-
-
-aplicarRangoPersonalizado() {
-  if (!this.fechaInicio || !this.fechaFin) {
-    this.etiquetaRango = 'Fechas incompletas';
-    return;
-  }
-
-  const desde = new Date(this.fechaInicio);
-  const hasta = new Date(this.fechaFin);
-  hasta.setHours(23, 59, 59, 999);
-
-  this.archivosFiltrados = this.archivos.filter(a => {
-    const ms = Number(a.uploaded_at);
-    return ms >= desde.getTime() && ms <= hasta.getTime();
-  });
-
-  this.etiquetaRango = `Del ${this.formatoFecha(this.fechaInicio)} al ${this.formatoFecha(this.fechaFin)}`;
-  this.filtrarGraficoArchivos();
-},
-
-  setRangoClientes(rango) {
-  this.rangoSeleccionadoClientes = rango
-  this.mostrarFiltroClientes = false
-
-  const ahora = new Date()
-  let desde = new Date()
-
-  switch (rango) {
-    case 'hoy':
-      desde.setHours(0, 0, 0, 0)
-      this.etiquetaRangoClientes = 'Hoy'
-      break
-    case '2dias':
-      desde.setDate(ahora.getDate() - 2)
-      this.etiquetaRangoClientes = 'Últimos 2 días'
-      break
-    case 'semana':
-      desde.setDate(ahora.getDate() - 7)
-      this.etiquetaRangoClientes = 'Última semana'
-      break
-    case 'mes':
-      desde.setMonth(ahora.getMonth() - 1)
-      this.etiquetaRangoClientes = 'Último mes'
-      break
-    case 'personalizado':
-      this.etiquetaRangoClientes = 'Seleccione fechas'
-      return
-  }
-
-  this.usuariosFiltrados = this.clientesTotales.filter(u => new Date(u.creado_en) >= desde)
-},
-
-aplicarRangoPersonalizadoClientes() {
-  if (!this.fechaInicioClientes || !this.fechaFinClientes) {
-    this.etiquetaRangoClientes = 'Fechas incompletas'
-    return
-  }
-
-  const desde = new Date(this.fechaInicioClientes)
-  const hasta = new Date(this.fechaFinClientes)
-  hasta.setHours(23, 59, 59, 999)
-
-  this.usuariosFiltrados = this.clientesTotales.filter(u => {
-    const fecha = new Date(u.creado_en)
-    return fecha >= desde && fecha <= hasta
-  })
-
-  this.etiquetaRangoClientes = `Del ${this.formatoFecha(this.fechaInicioClientes)} al ${this.formatoFecha(this.fechaFinClientes)}`
-},
-
-
-        filtrarGraficoArchivos() {
-          const conteoPorFecha = {};
-
-          this.archivosFiltrados.forEach(a => {
-            const ms = Number(a.uploaded_at);
-            const fecha = new Date(ms).toISOString().split("T")[0]; // YYYY-MM-DD
-            conteoPorFecha[fecha] = (conteoPorFecha[fecha] || 0) + 1;
-          });
-
-          const fechasOrdenadas = Object.keys(conteoPorFecha).sort();
-
-          this.chartData = {
-            labels: fechasOrdenadas,
-            datasets: [{
-              label: 'Archivos subidos',
-              backgroundColor: '#42b983',
-              data: fechasOrdenadas.map(f => conteoPorFecha[f])
-            }]
-          };
-        },
-
-
-
-
-cambiarFiltroGrafico(filtro) {
-  this.filtroGrafico = filtro
-  this.mostrarFiltroGrafico = false
-  if (filtro !== 'personalizado') this.filtrarGraficoArchivos()
-}
-
-
-
-
-
-
-},
-        mounted() {
-          // 🟢 Mostrar datos dummy de clientes antes de cargar desde backend
-          this.usuarios = [
-            {
-              hostname: 'PC-Bogotá',
-              lat: 4.65,
-              lon: -74.1,
-              sistema_operativo: 'Windows 10',
-              creado_en: '2025-06-15T12:00:00'
-            },
-            {
-              hostname: 'PC-Medellín',
-              lat: 6.24,
-              lon: -75.58,
-              sistema_operativo: 'Ubuntu 22.04',
-              creado_en: '2025-06-13T08:30:00'
-            },
-            {
-              hostname: 'PC-Cali',
-              lat: 3.45,
-              lon: -76.53,
-              sistema_operativo: 'Windows 11',
-              creado_en: '2025-06-12T16:20:00'
-            },
-            {
-              hostname: 'PC-Barranquilla',
-              lat: 10.96,
-              lon: -74.8,
-              sistema_operativo: 'Debian 11',
-              creado_en: '2025-06-10T10:10:00'
-            }
-          ]
-          this.setRangoClientes('mes') // Filtro inicial con dummy
-
-          // 🔵 Cargar archivos reales
-          axios.get('http://symbolsaps.ddns.net:8000/api/files')
-            .then(res => {
-              this.archivos = res.data.filter(a => {
-                const ms = Number(a.uploaded_at)
-                return ms > 1000000000000 && ms < Date.now() + 86400000
-              })
-              this.setRango('mes')
-            })
-
-          // 🔵 Cargar túneles
-          axios.get('http://symbolsaps.ddns.net:8000/api/tunnels')
-            .then(res => this.tuneles = res.data)
-
-          this.filtrarGraficoArchivos()
-
-          // 🔵 Cargar clientes reales y actualizar
-          axios.get('http://symbolsaps.ddns.net:8000/api/clientes_info_all')
-            .then(res => {
-              this.usuarios = res.data
-                .map(c => ({
-                  ...c,
-                  estado: c.desconectado_en == null ? 'online' : 'offline'
-                }))
-                .filter(c => c.estado === 'online') // 🔹 Mostrar solo en línea
-            })
-
-            axios.get('http://symbolsaps.ddns.net:8000/api/clientes')
-            .then(res => {
-              this.clientesTotales = res.data
-              this.setRangoClientes('mes')
-            })
-
-
-        }
-
-
 }
 </script>
+
 
 
 <style scoped>

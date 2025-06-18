@@ -11,7 +11,7 @@ export default {
   props: {
     clientes: {
       type: Array,
-      required: true
+      default: () => []
     }
   },
   data() {
@@ -22,13 +22,15 @@ export default {
   },
   mounted() {
     this.inicializarMapa()
-    this.actualizarClientes(this.clientes)
+    this.mostrarClientes(this.clientes)
   },
   watch: {
     clientes: {
       handler(nuevosClientes) {
-        this.actualizarClientes(nuevosClientes)
+        this.limpiarMarcadores()
+        this.mostrarClientes(nuevosClientes)
       },
+      immediate: true,
       deep: true
     }
   },
@@ -39,25 +41,17 @@ export default {
         attribution: '&copy; OpenStreetMap contributors'
       }).addTo(this.map)
     },
-    actualizarClientes(clientes) {
-      this.limpiarMarcadores()
-      const bounds = []
-
+    mostrarClientes(clientes) {
       clientes.forEach(c => {
-        const lat = parseFloat(c.lat || c.latitud)
-        const lon = parseFloat(c.lon || c.longitud)
+        const lat = c.latitud || c.lat
+        const lon = c.longitud || c.lon
 
-        if (!isNaN(lat) && !isNaN(lon)) {
+        if (lat && lon) {
           const marker = L.marker([lat, lon]).addTo(this.map)
           marker.bindPopup(`<strong>${c.hostname}</strong><br>${c.sistema_operativo}`)
           this.markers.push(marker)
-          bounds.push([lat, lon])
         }
       })
-
-      if (bounds.length > 0) {
-        this.map.fitBounds(bounds, { padding: [20, 20] })
-      }
     },
     limpiarMarcadores() {
       this.markers.forEach(m => this.map.removeLayer(m))
@@ -66,6 +60,7 @@ export default {
   }
 }
 </script>
+
 
 <style scoped>
 /* Ya aplicado en el template */
